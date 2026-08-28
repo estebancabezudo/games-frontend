@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 180" role="img" aria-label="Dog walking left frame 1">
+  <g transform="translate(260 0) scale(-1 1)">
+    <ellipse cx="125" cy="112" rx="88" ry="48" fill="#b87945"/>
+    <circle cx="207" cy="85" r="42" fill="#c98b52"/>
+    <path d="M187 52 L172 12 L218 45 M226 57 L248 23 L246 75" fill="#7f4f2d"/>
+    <circle cx="220" cy="79" r="5" fill="#222"/>
+    <path d="M55 142 L38 174 M105 147 L122 177 M166 143 L148 176 M210 121 L226 169" stroke="#7f4f2d" stroke-width="15" stroke-linecap="round"/>
+    <path d="M40 105 Q8 83 20 54" fill="none" stroke="#b87945" stroke-width="16" stroke-linecap="round"/>
+  </g>
+</svg>

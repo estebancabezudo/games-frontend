@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 180" role="img" aria-label="Dog idle frame 1">
+  <ellipse cx="125" cy="115" rx="88" ry="48" fill="#b87945"/>
+  <circle cx="207" cy="88" r="42" fill="#c98b52"/>
+  <path d="M187 55 L172 15 L218 48 M226 60 L248 26 L246 78" fill="#7f4f2d"/>
+  <circle cx="220" cy="82" r="5" fill="#222"/>
+  <path d="M55 145 V174 M105 150 V178 M166 146 V176 M210 124 V170" stroke="#7f4f2d" stroke-width="15" stroke-linecap="round"/>
+  <path d="M40 108 Q8 85 20 55" fill="none" stroke="#b87945" stroke-width="16" stroke-linecap="round"/>
+</svg>

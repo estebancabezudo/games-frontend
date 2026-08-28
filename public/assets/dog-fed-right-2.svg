@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 180" role="img" aria-label="Fed dog right frame 2">
+  <ellipse cx="125" cy="112" rx="88" ry="48" fill="#d89b5e"/>
+  <circle cx="207" cy="109" r="42" fill="#e8ad70"/>
+  <path d="M187 76 L172 36 L218 69 M226 81 L248 47 L246 99" fill="#89562f"/>
+  <circle cx="220" cy="103" r="5" fill="#222"/>
+  <path d="M55 142 V174 M105 147 V178 M166 143 V176 M210 145 V170" stroke="#89562f" stroke-width="15" stroke-linecap="round"/>
+  <path d="M40 105 Q8 82 20 52" fill="none" stroke="#d89b5e" stroke-width="16" stroke-linecap="round"/>
+  <path d="M205 140 H255 L246 172 H214 Z" fill="#4b78ad"/>
+  <circle cx="235" cy="146" r="8" fill="#f3cf75"/>
+</svg>

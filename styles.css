@@ -1,0 +1,360 @@
+:root {
+  color: #202124;
+  background: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-width: 320px;
+  min-height: 100%;
+  margin: 0;
+}
+
+button {
+  color: inherit;
+  font: inherit;
+}
+
+textarea {
+  color: inherit;
+  font: inherit;
+}
+
+.editor-layout {
+  display: grid;
+  grid-template-columns: 12rem minmax(0, 1fr);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.editor-menu {
+  padding: 1.5rem 1rem;
+  border-right: 1px solid #d9dce1;
+  background: #f5f6f8;
+}
+
+.editor-menu ul {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.editor-menu button {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  text-align: left;
+}
+
+.editor-workspace {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+}
+
+.editor-pane,
+.preview-pane {
+  min-width: 0;
+  padding: 1.5rem;
+}
+
+.editor-pane {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 1rem;
+  border-right: 1px solid #d9dce1;
+}
+
+.preview-pane {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 1rem;
+}
+
+#yaml-editor {
+  width: 100%;
+  min-height: 0;
+  padding: 1rem;
+  resize: none;
+  border: 1px solid #d9dce1;
+  border-radius: 0.25rem;
+  background: #ffffff;
+  font-family: Consolas, "Courier New", monospace;
+  line-height: 1.5;
+  tab-size: 2;
+}
+
+#yaml-editor:focus {
+  border-color: #7a8494;
+  outline: 2px solid #dce4ef;
+  outline-offset: 1px;
+}
+
+.scene-preview {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  background: #f5f6f8;
+}
+
+.dialogue-view {
+  position: absolute;
+  z-index: 10;
+  right: 1rem;
+  bottom: 1rem;
+  left: 1rem;
+  padding: 0.85rem;
+  border: 1px solid #687386;
+  border-radius: 0.25rem;
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 0.35rem 1rem rgb(32 33 36 / 18%);
+}
+
+.dialogue-view[hidden] {
+  display: none;
+}
+
+.dialogue-actor {
+  margin: 0 0 0.4rem;
+  font-weight: 700;
+}
+
+.dialogue-text {
+  margin: 0 0 0.75rem;
+  line-height: 1.4;
+}
+
+.dialogue-view button {
+  padding: 0.4rem 0.65rem;
+  border: 1px solid #2459a6;
+  border-radius: 0.25rem;
+  background: #2459a6;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.scene-canvas {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid #b8bdc6;
+  box-shadow: 0 0.5rem 1.5rem rgb(32 33 36 / 12%);
+}
+
+.scene-elements {
+  position: absolute;
+  inset: 0;
+}
+
+.scene-hotspots {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  pointer-events: none;
+}
+
+.scene-walk {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.scene-walk-segment {
+  stroke: #df4d9f;
+  stroke-dasharray: 7 5;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.scene-walk-segment-disabled {
+  stroke: #777777;
+  stroke-dasharray: 2 9;
+  opacity: 0.45;
+}
+
+.scene-walk-node {
+  fill: #ffffff;
+  stroke: #b51f72;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.scene-element {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  pointer-events: none;
+  color: #ffffff;
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scene-element-asset {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.scene-element-asset-error {
+  padding: 0.25rem;
+  background: #fff2f2;
+  color: #8a2020;
+  font-size: 0.625rem;
+  line-height: 1.2;
+  text-align: center;
+  white-space: normal;
+}
+
+.scene-character {
+  position: absolute;
+  overflow: hidden;
+}
+
+.scene-actor-interactive {
+  overflow: visible;
+  cursor: pointer;
+}
+
+.scene-actor-interactive::before {
+  position: absolute;
+  inset: -0.75rem;
+  content: "";
+}
+
+.scene-actor-interactive:focus-visible {
+  outline: 2px solid #153c73;
+  outline-offset: 2px;
+}
+
+.scene-character-asset {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.scene-character-asset-error {
+  display: grid;
+  place-items: center;
+  padding: 0.25rem;
+  background: #fff2f2;
+  color: #8a2020;
+  font-size: 0.625rem;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.scene-hotspot {
+  position: absolute;
+  overflow: hidden;
+  padding: 0;
+  border: 1px dashed #2459a6;
+  background: rgb(70 130 210 / 25%);
+  color: #153c73;
+  font-size: 0.75rem;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.scene-hotspot:focus-visible {
+  outline: 2px solid #153c73;
+  outline-offset: 1px;
+}
+
+.scene-label {
+  position: relative;
+  z-index: 1;
+  max-width: calc(100% - 2rem);
+  padding: 0.4rem 0.65rem;
+  overflow: hidden;
+  border-radius: 0.25rem;
+  background: rgb(255 255 255 / 82%);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#yaml-error {
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid #d8a5a5;
+  border-radius: 0.25rem;
+  background: #fff2f2;
+  color: #8a2020;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.state-view {
+  padding: 0.75rem;
+  border: 1px solid #d9dce1;
+  border-radius: 0.25rem;
+  background: #f5f6f8;
+}
+
+.state-view h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.inventory-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.inventory-item {
+  padding: 0.35rem 0.55rem;
+  border: 1px solid #9ba3af;
+  border-radius: 0.25rem;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.inventory-item[aria-pressed="true"] {
+  border-color: #2459a6;
+  background: #dce9fa;
+  color: #153c73;
+}
+
+.interaction-status {
+  min-height: 1.25rem;
+  margin: 0 0 0.5rem;
+  color: #46505e;
+  font-size: 0.8125rem;
+}
+
+.state-view pre {
+  max-height: 10rem;
+  margin: 0;
+  overflow: auto;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.editor-pane h1,
+.preview-pane h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}

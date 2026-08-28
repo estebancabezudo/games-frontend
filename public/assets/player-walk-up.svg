@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 420" role="img" aria-label="Player walking up">
+  <circle cx="90" cy="62" r="48" fill="#f2bd83"/>
+  <path d="M42 125 Q90 95 138 125 L150 300 L115 300 L140 395 L102 405 L74 305 L42 400 L10 382 L65 290 L30 280 Z" fill="#00a896"/>
+  <path d="M90 82 V22 L66 48 M90 22 L114 48" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

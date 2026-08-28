@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 180" role="img" aria-label="Fed dog talking left frame 1">
+  <g transform="translate(260 0) scale(-1 1)">
+    <ellipse cx="125" cy="115" rx="88" ry="48" fill="#d6a15f"/>
+    <circle cx="207" cy="88" r="42" fill="#e0b36f"/>
+    <circle cx="220" cy="82" r="5" fill="#222"/>
+    <path d="M222 103 Q238 110 246 101" fill="none" stroke="#532f2f" stroke-width="7" stroke-linecap="round"/>
+    <path d="M55 145 V174 M105 150 V178 M166 146 V176 M210 124 V170" stroke="#8f6136" stroke-width="15" stroke-linecap="round"/>
+  </g>
+</svg>

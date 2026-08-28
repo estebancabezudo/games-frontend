@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 400" role="img" aria-label="Waiter facing right">
+  <circle cx="80" cy="55" r="42" fill="#b97850"/>
+  <path d="M38 112 Q80 88 122 112 L136 290 L102 290 L98 390 L62 390 L58 290 L24 290 Z" fill="#343a46"/>
+  <path d="M80 112 V290 M45 150 H115" stroke="#f4f1e8" stroke-width="10"/>
+  <path d="M88 48 H137 L120 30 M137 48 L120 66" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

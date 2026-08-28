@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Módulo de juegos" />
+    <title>Games Editor</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="editor-layout">
+      <aside class="editor-menu">
+        <nav aria-label="Editor">
+          <ul>
+            <li><button type="button">Game</button></li>
+            <li><button type="button">Files</button></li>
+            <li><button type="button">Scene</button></li>
+          </ul>
+        </nav>
+      </aside>
+
+      <main class="editor-workspace">
+        <section class="editor-pane" aria-labelledby="text-title">
+          <h1 id="text-title">Text</h1>
+          <textarea id="yaml-editor" aria-label="YAML" spellcheck="false">game:
+  id: example
+  initial_scene: yard
+
+items:
+  - id: dog_food
+  - id: brass_key
+
+state:
+  inventory:
+    - dog_food
+  flags:
+    door_open: false
+    light_on: false
+    dog_fed: false
+    dog_angry: false
+    waiter_met: false
+    lever_on: false
+    brass_key_taken: false
+
+scenes:
+  - id: yard
+
+    viewport:
+      orientation: portrait
+
+    size:
+      width: 3000
+      height: 1920
+
+    background:
+      color: "#dddddd"
+
+    depth:
+      scale:
+        near_y: 1700
+        near_scale: 1.0
+        far_y: 500
+        far_scale: 0.75
+
+    controlled_actor: player
+
+    actors:
+      - id: player
+        visual:
+          directions: 4
+          states:
+            idle:
+              up: "assets/player-up.svg"
+              right: "assets/player-right.svg"
+              down: "assets/player-down.svg"
+              left: "assets/player-left.svg"
+            walking:
+              up: "assets/player-walk-up.svg"
+              right:
+                animation:
+                  frames:
+                    - "assets/player-walk-right-1.svg"
+                    - "assets/player-walk-right-2.svg"
+                  fps: 6
+                  loop: true
+              down: "assets/player-walk-down.svg"
+              left: "assets/player-walk-left.svg"
+            talking:
+              up:
+                animation:
+                  frames:
+                    - "assets/player-talk-1.svg"
+                    - "assets/player-talk-2.svg"
+                  fps: 4
+              right:
+                animation:
+                  frames:
+                    - "assets/player-talk-1.svg"
+                    - "assets/player-talk-2.svg"
+                  fps: 4
+              down:
+                animation:
+                  frames:
+                    - "assets/player-talk-1.svg"
+                    - "assets/player-talk-2.svg"
+                  fps: 4
+              left:
+                animation:
+                  frames:
+                    - "assets/player-talk-1.svg"
+                    - "assets/player-talk-2.svg"
+                  fps: 4
+        position:
+          x: 1500
+          y: 800
+        size:
+          width: 180
+          height: 420
+      - id: dog
+        interactions:
+          approach_distance: 180
+          effects:
+            - set_flag: dog_angry
+            - start_dialogue: dog_warning
+          variants:
+            - when:
+                flag: dog_fed
+                value: true
+              effects:
+                - start_dialogue: dog_friendly
+        movement:
+          type: patrol
+          enabled_when:
+            flag: dog_fed
+            value: false
+          points:
+            - x: 1650
+              y: 900
+            - x: 2350
+              y: 1050
+        visual:
+          directions: 2
+          states:
+            idle:
+              left:
+                animation:
+                  frames:
+                    - "assets/dog-idle-left-1.svg"
+                    - "assets/dog-idle-left-2.svg"
+                  fps: 2
+              right:
+                animation:
+                  frames:
+                    - "assets/dog-idle-1.svg"
+                    - "assets/dog-idle-2.svg"
+                  fps: 2
+            walking:
+              left:
+                animation:
+                  frames:
+                    - "assets/dog-walk-left-1.svg"
+                    - "assets/dog-walk-left-2.svg"
+                  fps: 5
+              right:
+                animation:
+                  frames:
+                    - "assets/dog-walk-right-1.svg"
+                    - "assets/dog-walk-right-2.svg"
+                  fps: 5
+            talking:
+              left:
+                animation:
+                  frames:
+                    - "assets/dog-talk-left-1.svg"
+                    - "assets/dog-talk-left-2.svg"
+                  fps: 4
+              right:
+                animation:
+                  frames:
+                    - "assets/dog-talk-right-1.svg"
+                    - "assets/dog-talk-right-2.svg"
+                  fps: 4
+        variants:
+          - when:
+              flag: dog_fed
+              value: true
+            states:
+              idle:
+                left:
+                  animation:
+                    frames:
+                      - "assets/dog-fed-left-1.svg"
+                      - "assets/dog-fed-left-2.svg"
+                    fps: 2
+                right:
+                  animation:
+                    frames:
+                      - "assets/dog-fed-right-1.svg"
+                      - "assets/dog-fed-right-2.svg"
+                    fps: 2
+              walking:
+                left:
+                  animation:
+                    frames:
+                      - "assets/dog-fed-left-1.svg"
+                      - "assets/dog-fed-left-2.svg"
+                    fps: 2
+                right:
+                  animation:
+                    frames:
+                      - "assets/dog-fed-right-1.svg"
+                      - "assets/dog-fed-right-2.svg"
+                    fps: 2
+              talking:
+                left:
+                  animation:
+                    frames:
+                      - "assets/dog-fed-talk-left-1.svg"
+                      - "assets/dog-fed-talk-left-2.svg"
+                    fps: 4
+                right:
+                  animation:
+                    frames:
+                      - "assets/dog-fed-talk-right-1.svg"
+                      - "assets/dog-fed-talk-right-2.svg"
+                    fps: 4
+        position:
+          x: 2200
+          y: 1050
+        size:
+          width: 260
+          height: 180
+      - id: waiter
+        interactions:
+          approach_distance: 180
+          effects:
+            - set_flag: waiter_met
+            - start_dialogue: waiter_greeting
+        visual:
+          directions: 2
+          states:
+            idle:
+              left: "assets/waiter-left.svg"
+              right: "assets/waiter-right.svg"
+            walking:
+              left: "assets/waiter-left.svg"
+              right: "assets/waiter-right.svg"
+            talking:
+              left:
+                animation:
+                  frames:
+                    - "assets/waiter-talk-left-1.svg"
+                    - "assets/waiter-talk-left-2.svg"
+                  fps: 4
+              right:
+                animation:
+                  frames:
+                    - "assets/waiter-talk-right-1.svg"
+                    - "assets/waiter-talk-right-2.svg"
+                  fps: 4
+        position:
+          x: 1000
+          y: 1200
+        size:
+          width: 160
+          height: 400
+
+    dialogues:
+      - id: dog_warning
+        lines:
+          - actor: player
+            text: "Tranquilo."
+          - actor: dog
+            text: "Grrrr..."
+          - actor: player
+            text: "Necesito encontrar otra forma de pasar."
+      - id: dog_friendly
+        lines:
+          - actor: dog
+            text: "Gracias por la comida."
+          - actor: player
+            text: "Buen perro."
+      - id: waiter_greeting
+        lines:
+          - actor: waiter
+            text: "Buenas tardes."
+          - actor: player
+            text: "Hola."
+          - actor: player
+            text: "Que bueno verte de nuevo."
+      - id: cannot_pass
+        lines:
+          - actor: player
+            text: "No puedo pasar por aquí."
+
+    walk:
+      nodes:
+        - id: entrance
+          x: 300
+          y: 1400
+        - id: table_left
+          x: 1000
+          y: 1200
+        - id: center
+          x: 1500
+          y: 800
+        - id: table_right
+          x: 2000
+          y: 1200
+        - id: upper_right
+          x: 2000
+          y: 700
+        - id: door
+          x: 2600
+          y: 1000
+        - id: before_dog
+          x: 2200
+          y: 1000
+          on_arrival:
+            enabled_when:
+              flag: dog_fed
+              value: false
+            effects:
+              - start_dialogue: cannot_pass
+      paths:
+        - from: entrance
+          to: table_left
+        - from: table_left
+          to: center
+        - from: center
+          to: upper_right
+        - from: upper_right
+          to: table_right
+        - from: table_right
+          to: before_dog
+        - from: before_dog
+          to: door
+          enabled_when:
+            flag: dog_fed
+            value: true
+
+    elements:
+      - id: table
+        x: 290
+        y: 700
+        width: 500
+        height: 350
+        color: "#996633"
+        z: 10
+        depth_y: 950
+      - id: dark_overlay
+        x: 0
+        y: 0
+        width: 3000
+        height: 1920
+        color: "#000000"
+        z: -100
+        visible_when:
+          flag: light_on
+          value: false
+      - id: lever
+        x: 2400
+        y: 600
+        width: 100
+        height: 200
+        asset: "assets/lever-up.svg"
+        z: 20
+        variants:
+          - when:
+              flag: lever_on
+              value: true
+            asset: "assets/lever-down.svg"
+      - id: brass_key
+        x: 1900
+        y: 700
+        width: 100
+        height: 40
+        asset: "assets/brass-key.svg"
+        z: 20
+        visible_when:
+          flag: brass_key_taken
+          value: false
+
+    hotspots:
+      - id: light_switch
+        area:
+          x: 100
+          y: 100
+          width: 100
+          height: 100
+        effects:
+          - toggle_flag: light_on
+      - id: lever_switch
+        area:
+          x: 2400
+          y: 600
+          width: 100
+          height: 200
+        approach:
+          x: 2350
+          y: 1120
+        effects:
+          - toggle_flag: lever_on
+      - id: brass_key_on_table
+        area:
+          x: 1900
+          y: 700
+          width: 100
+          height: 40
+        approach:
+          x: 2000
+          y: 700
+        effects:
+          - give_item: brass_key
+          - set_flag: brass_key_taken
+      - id: house_door
+        area:
+          x: 1450
+          y: 450
+          width: 180
+          height: 350
+        approach:
+          x: 1500
+          y: 800
+        effects:
+          - change_scene: house
+
+    interaction:
+      use:
+        item: dog_food
+        on_actor: dog
+      effects:
+        - take_item: dog_food
+        - set_flag: dog_fed
+
+  - id: house
+    viewport:
+      orientation: landscape
+    size:
+      width: 1800
+      height: 1000
+    background:
+      color: "#cccccc"
+    controlled_actor: player
+    actors:
+      - id: player
+        asset: "assets/player.svg"
+        position:
+          x: 900
+          y: 800
+        size:
+          width: 180
+          height: 420
+    walk:
+      nodes:
+        - id: left
+          x: 300
+          y: 800
+        - id: right
+          x: 1500
+          y: 800
+      paths:
+        - from: left
+          to: right
+    elements:
+      - id: rug
+        x: 500
+        y: 650
+        width: 800
+        height: 200
+        color: "#9a6f52"
+    hotspots:
+      - id: exit_to_yard
+        area:
+          x: 100
+          y: 500
+          width: 180
+          height: 300
+        approach:
+          x: 300
+          y: 800
+        effects:
+          - change_scene: yard</textarea>
+        </section>
+        <section class="preview-pane" aria-labelledby="result-title">
+          <h2 id="result-title">Result</h2>
+          <div id="scene-preview" class="scene-preview" aria-live="polite">
+            <section id="dialogue-view" class="dialogue-view" aria-live="polite" hidden>
+              <p id="dialogue-actor" class="dialogue-actor"></p>
+              <p id="dialogue-text" class="dialogue-text"></p>
+              <button id="dialogue-continue" type="button">Continuar</button>
+            </section>
+          </div>
+          <p id="yaml-error" role="alert" hidden></p>
+          <aside id="state-view" class="state-view" aria-labelledby="state-title">
+            <h3 id="state-title">State (development)</h3>
+            <div id="inventory-items" class="inventory-items" aria-label="Inventory"></div>
+            <p id="interaction-status" class="interaction-status" aria-live="polite"></p>
+            <pre id="state-output"></pre>
+          </aside>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

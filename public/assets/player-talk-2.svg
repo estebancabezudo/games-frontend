@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 420" role="img" aria-label="Player talking frame 2">
+  <circle cx="90" cy="62" r="48" fill="#d7a477"/>
+  <path d="M42 125 Q90 95 138 125 L150 300 L115 300 L108 405 L72 405 L65 300 L30 300 Z" fill="#365f9d"/>
+  <path d="M48 405 H82 M98 405 H132" fill="none" stroke="#293241" stroke-width="20" stroke-linecap="round"/>
+  <ellipse cx="90" cy="78" rx="10" ry="10" fill="#532f2f"/>
+</svg>

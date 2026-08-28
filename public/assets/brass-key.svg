@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 40" role="img" aria-label="Brass key">
+  <circle cx="20" cy="20" r="14" fill="none" stroke="#b8860b" stroke-width="8"/>
+  <path d="M34 20h56M70 20v12M84 20v8" fill="none" stroke="#d4a72c" stroke-width="8" stroke-linejoin="round"/>
+</svg>
