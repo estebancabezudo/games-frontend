@@ -312,6 +312,10 @@ scenes:
         lines:
           - actor: player
             text: "El cajón está vacío."
+      - id: table_look
+        lines:
+          - actor: player
+            text: "Es una mesa sólida."
 
     walk:
       nodes:
@@ -477,6 +481,15 @@ scenes:
         approach:
           x: 2000
           y: 700
+      - id: table_surface
+        area:
+          x: 290
+          y: 700
+          width: 500
+          height: 350
+        approach:
+          x: 1000
+          y: 1200
       - id: table_drawer
         area:
           x: 450
@@ -526,6 +539,16 @@ scenes:
             effects:
               - give_item: brass_key
               - set_flag: brass_key_taken
+      - id: table
+        name: "Mesa"
+        element: table
+        hotspot: table_surface
+        location: table_surface
+        actions:
+          - id: look
+            label: "Mirar"
+            effects:
+              - start_dialogue: table_look
       - id: table_drawer
         name: "Cajón"
         element: table_drawer

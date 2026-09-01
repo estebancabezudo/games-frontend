@@ -15,6 +15,7 @@ import "./dialogue-runtime.test.js";
 import "./dialogue-session.test.js";
 import "./dialogue-timing.test.js";
 import "./drawer-example.test.js";
+import "./table-comment-example.test.js";
 import "./element-visibility.test.js";
 import "./element-variants.test.js";
 import "./flag-effects.test.js";
