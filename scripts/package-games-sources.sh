@@ -8,14 +8,58 @@ documents_root=$(CDPATH= cd -- "${product_root}/.." && pwd)
 backend_root="${documents_root}/cabezudo.dev"
 timestamp=$(date +%Y%m%d-%H%M%S)
 output_path="${script_dir}/games-sources-review-${timestamp}.zip"
+declare -a explicit_archive_paths=()
+declare -A explicit_archive_path_set=()
+output_option_seen=false
+files_option_seen=false
 
-if (( $# > 0 )); then
-    [[ $# -eq 2 && $1 == --output ]] || {
-        printf 'Usage: %s [--output ZIP]\n' "${BASH_SOURCE[0]}" >&2
-        exit 2
-    }
-    output_path=$2
-fi
+usage() {
+    printf 'Usage: %s [--output ZIP] [--files ARCHIVE_PATH...]\n' "${BASH_SOURCE[0]}" >&2
+}
+
+while (( $# > 0 )); do
+    case $1 in
+        --output)
+            [[ ${output_option_seen} == false ]] || {
+                printf 'Error: --output may only be provided once.\n' >&2
+                usage
+                exit 2
+            }
+            (( $# >= 2 )) && [[ -n $2 && $2 != --* ]] || {
+                printf 'Error: --output requires a ZIP path.\n' >&2
+                usage
+                exit 2
+            }
+            output_option_seen=true
+            output_path=$2
+            shift 2
+            ;;
+        --files)
+            [[ ${files_option_seen} == false ]] || {
+                printf 'Error: --files may only be provided once.\n' >&2
+                usage
+                exit 2
+            }
+            files_option_seen=true
+            shift
+            files_before=${#explicit_archive_paths[@]}
+            while (( $# > 0 )) && [[ $1 != --* ]]; do
+                explicit_archive_paths+=("$1")
+                shift
+            done
+            (( ${#explicit_archive_paths[@]} > files_before )) || {
+                printf 'Error: --files requires at least one archive path.\n' >&2
+                usage
+                exit 2
+            }
+            ;;
+        *)
+            printf 'Error: unknown option: %s\n' "$1" >&2
+            usage
+            exit 2
+            ;;
+    esac
+done
 
 fail() {
     printf 'Error: %s\n' "$*" >&2
@@ -93,40 +137,90 @@ stage_git_selection() {
     local relative_path
     while IFS= read -r -d '' relative_path; do
         stage_file "${repository}/${relative_path}" "${archive_prefix}/${relative_path}"
-    done < <(git -C "${repository}" ls-files -z --cached --others --exclude-standard -- "$@")
+    done < <(git -C "${repository}" ls-files -z --cached -- "$@")
 }
 
-stage_filesystem_tree() {
-    local source_root=$1
+explicit_source() {
+    local archive_path=$1
+    case ${archive_path} in
+        games/*)
+            explicit_repository=${product_root}
+            explicit_relative_path=${archive_path#games/}
+            ;;
+        cabezudo.dev/*)
+            explicit_repository=${backend_root}
+            explicit_relative_path=${archive_path#cabezudo.dev/}
+            ;;
+        *)
+            fail "explicit path must begin with games/ or cabezudo.dev/: ${archive_path}"
+            ;;
+    esac
+}
+
+validate_explicit_file() {
+    local archive_path=$1
+    [[ -n ${archive_path} ]] || fail 'explicit archive path must not be empty'
+    [[ ${archive_path} != /* ]] || fail "explicit path must be relative: ${archive_path}"
+    case "/${archive_path}/" in
+        */../*) fail "explicit path must not contain '..': ${archive_path}" ;;
+    esac
+    explicit_source "${archive_path}"
+    [[ -n ${explicit_relative_path} ]] \
+        || fail "explicit path must identify a file: ${archive_path}"
+    [[ -d ${explicit_repository} ]] \
+        || fail "repository does not exist for explicit path: ${archive_path}"
+    local source_file="${explicit_repository}/${explicit_relative_path}"
+    [[ -e ${source_file} || -L ${source_file} ]] \
+        || fail "explicit file does not exist: ${archive_path}"
+    [[ ! -L ${source_file} ]] || fail "explicit file must not be a symbolic link: ${archive_path}"
+    [[ -f ${source_file} ]] || fail "explicit path must be a regular file: ${archive_path}"
+    is_excluded "${archive_path}" && fail "explicit file is excluded: ${archive_path}"
+    is_sensitive_path "${archive_path}" && fail "sensitive explicit path selected: ${archive_path}"
+    git -C "${explicit_repository}" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
+        || fail "explicit file is not inside a Git repository: ${archive_path}"
+    git -C "${explicit_repository}" ls-files --error-unmatch -- "${explicit_relative_path}" \
+        >/dev/null 2>&1 \
+        || fail "explicit file is not added to the Git index; run git add -- ${explicit_relative_path}"
+    contains_secret "${source_file}" && fail "possible secret found in: ${archive_path}"
+    return 0
+}
+
+git -C "${product_root}" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
+    || fail "Games project is not a Git repository: ${product_root}"
+
+for explicit_archive_path in "${explicit_archive_paths[@]}"; do
+    validate_explicit_file "${explicit_archive_path}"
+    [[ -z ${explicit_archive_path_set["${explicit_archive_path}"]+x} ]] \
+        || fail "explicit file was declared more than once: ${explicit_archive_path}"
+    explicit_archive_path_set["${explicit_archive_path}"]=1
+done
+
+require_new_files_declared() {
+    local repository=$1
     local archive_prefix=$2
-    local source_file
-    while IFS= read -r -d '' source_file; do
-        stage_file "${source_file}" "${archive_prefix}/${source_file#"${source_root}/"}"
-    done < <(find -P "${source_root}" \
-        -type d \( -name .git -o -name .gradle -o -name build -o -name target \
-            -o -name node_modules -o -name dist -o -name coverage -o -name .idea \
-            -o -name .kotlin -o -name .local-secrets \) -prune \
-        -o -type f -print0)
+    shift 2
+    local relative_path archive_path
+    while IFS= read -r -d '' relative_path; do
+        archive_path="${archive_prefix}/${relative_path}"
+        [[ -n ${explicit_archive_path_set["${archive_path}"]+x} ]] \
+            || fail "new Git-indexed file must be declared with --files: ${archive_path}"
+    done < <(git -C "${repository}" diff --cached --name-only --diff-filter=A -z -- "$@")
 }
 
-if git -C "${product_root}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    stage_git_selection "${product_root}" 'games' '.'
-else
-    while IFS= read -r -d '' product_entry; do
-        entry_name=${product_entry#"${product_root}/"}
-        if [[ -d ${product_entry} ]] \
-                && git -C "${product_entry}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-            stage_git_selection "${product_entry}" "games/${entry_name}" '.'
-        elif [[ -d ${product_entry} ]]; then
-            stage_filesystem_tree "${product_entry}" "games/${entry_name}"
-        elif [[ -f ${product_entry} ]]; then
-            stage_file "${product_entry}" "games/${entry_name}"
-        fi
-    done < <(find -P "${product_root}" -mindepth 1 -maxdepth 1 -print0)
-fi
+require_new_files_declared "${product_root}" 'games' '.'
+stage_git_selection "${product_root}" 'games' '.'
 
 if [[ -d ${backend_root}/api/backend/games || -d ${backend_root}/api/backend/docs/projects/games ]] \
         && git -C "${backend_root}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    require_new_files_declared "${backend_root}" 'cabezudo.dev' \
+        'AGENTS.md' \
+        'api/backend/AGENTS.md' \
+        'api/backend/pom.xml' \
+        'api/backend/mvnw' \
+        'api/backend/mvnw.cmd' \
+        'api/backend/.mvn' \
+        'api/backend/games' \
+        'api/backend/docs/projects/games'
     stage_git_selection "${backend_root}" 'cabezudo.dev' \
         'AGENTS.md' \
         'api/backend/AGENTS.md' \
@@ -142,6 +236,12 @@ file_count=$(find -P "${staging_root}" -type f -printf . | wc -c)
 (( file_count > 0 )) || fail 'no source files selected'
 (cd "${staging_root}" && zip -q -r "${candidate_archive}" .)
 unzip -tq "${candidate_archive}" >/dev/null || fail 'unzip validation failed'
+for explicit_archive_path in "${explicit_archive_paths[@]}"; do
+    occurrence_count=$(unzip -Z1 "${candidate_archive}" \
+        | awk -v target="${explicit_archive_path}" '$0 == target { count += 1 } END { print count + 0 }')
+    [[ ${occurrence_count} -eq 1 ]] \
+        || fail "explicit file must appear exactly once in ZIP (${occurrence_count}): ${explicit_archive_path}"
+done
 mkdir -p -- "$(dirname -- "${output_path}")"
 mv -- "${candidate_archive}" "${output_path}"
 

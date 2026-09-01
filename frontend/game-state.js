@@ -1,11 +1,12 @@
 import { createItemCatalog, requireCatalogItem } from "./item-model.js";
+import { createFlagsState } from "./flag-state.js";
 
 export function createGameState(document, items = createItemCatalog(document?.items)) {
   const state = requiredObject(document?.state, "state");
 
   return {
     inventory: inventoryItems(state.inventory, items),
-    flags: stateFlags(state.flags),
+    flags: createFlagsState(state.flags),
   };
 }
 
@@ -23,17 +24,6 @@ function inventoryItems(value, items) {
     throw new Error(`state.inventory contiene un id duplicado: ${duplicate}.`);
   }
   return inventory;
-}
-
-function stateFlags(value) {
-  const flags = requiredObject(value, "state.flags");
-
-  return Object.fromEntries(Object.entries(flags).map(([name, flagValue]) => {
-    if (typeof flagValue !== "boolean") {
-      throw new Error(`state.flags.${name} debe ser true o false.`);
-    }
-    return [name, flagValue];
-  }));
 }
 
 function requiredObject(value, path) {

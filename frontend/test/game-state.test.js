@@ -27,13 +27,13 @@ test("rejects inventory entries that are not text", () => {
   );
 });
 
-test("rejects flags that are not boolean", () => {
+test("rejects a string that is not a complete flag expression", () => {
   assert.throws(
     () => createGameState({
       items: [],
       state: { inventory: [], flags: { door_open: "false" } },
     }),
-    /state\.flags\.door_open debe ser true o false/,
+    /debe contener operando, operador y operando/,
   );
 });
 

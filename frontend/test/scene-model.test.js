@@ -70,10 +70,12 @@ hotspots:
     }],
     hotspots: [{
       id: "switch",
+      enabledWhen: null,
       area: { x: 100, y: 400, width: 200, height: 100 },
       approach: null,
       effects: [{ type: "toggle_flag", flag: "light_on" }],
     }],
+    objects: [],
     useInteraction: null,
   });
 });
@@ -108,6 +110,7 @@ background:
     walk: null,
     elements: [],
     hotspots: [],
+    objects: [],
     useInteraction: null,
   });
 });
@@ -127,6 +130,7 @@ test("creates a hotspot without a direct action for an item interaction", () => 
 
   assert.deepEqual(model.hotspots, [{
     id: "dog",
+    enabledWhen: null,
     area: { x: 600, y: 900, width: 300, height: 300 },
     approach: null,
     effects: [],

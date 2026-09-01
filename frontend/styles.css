@@ -276,6 +276,20 @@ textarea {
   outline-offset: 1px;
 }
 
+.scene-object-name {
+  position: absolute;
+  z-index: 4;
+  bottom: 1rem;
+  left: 1rem;
+  padding: 0.4rem 0.65rem;
+  border-radius: 0.25rem;
+  background: rgb(20 28 42 / 88%);
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  pointer-events: none;
+}
+
 .scene-label {
   position: relative;
   z-index: 1;
@@ -319,6 +333,68 @@ textarea {
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-bottom: 0.5rem;
+}
+
+.nearby-objects-panel {
+  margin-bottom: 0.75rem;
+  padding: 0.65rem;
+  border: 1px solid #b9c8dc;
+  border-radius: 0.25rem;
+  background: #eef4fc;
+}
+
+.nearby-objects-panel h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+}
+
+.nearby-objects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.nearby-object-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid #c7d4e5;
+}
+
+.nearby-object-actions[hidden] {
+  display: none;
+}
+
+.nearby-object {
+  padding: 0.35rem 0.55rem;
+  border: 1px solid #8b98a8;
+  border-radius: 0.25rem;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.nearby-object[aria-pressed="true"] {
+  border-color: #2459a6;
+  background: #dce9fa;
+  color: #153c73;
+}
+
+.nearby-object-action {
+  padding: 0.35rem 0.55rem;
+  border: 1px solid #2459a6;
+  border-radius: 0.25rem;
+  background: #2459a6;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.nearby-object-action:disabled {
+  border-color: #9ba3af;
+  background: #d6d9de;
+  color: #626973;
+  cursor: not-allowed;
 }
 
 .inventory-item {

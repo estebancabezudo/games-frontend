@@ -3,6 +3,15 @@ export function createFlagCondition(value, gameState, path) {
     throw new Error(`${path} debe ser un objeto.`);
   }
 
+  const unknownProperties = Object.keys(value).filter(
+    (property) => property !== "flag" && property !== "value",
+  );
+  if (unknownProperties.length > 0) {
+    throw new Error(
+      `${path} contiene propiedades desconocidas: ${unknownProperties.join(", ")}.`,
+    );
+  }
+
   const flag = requiredText(value.flag, `${path}.flag`);
   if (!Object.hasOwn(gameState.flags, flag)) {
     throw new Error(`${path}.flag refiere a un flag no declarado: ${flag}.`);

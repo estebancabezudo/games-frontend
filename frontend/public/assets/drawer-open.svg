@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 120" role="img" aria-labelledby="title">
+  <title id="title">Cajón abierto</title>
+  <rect x="4" y="4" width="212" height="58" rx="8" fill="#4a2e1b" stroke="#2d1b10" stroke-width="8"/>
+  <path d="M18 45h184l-16 67H34z" fill="#8b5a35" stroke="#3b2415" stroke-width="6"/>
+  <path d="M34 56h152l-9 39H43z" fill="#26170e"/>
+  <circle cx="110" cy="103" r="8" fill="#d6ad55" stroke="#594018" stroke-width="4"/>
+</svg>

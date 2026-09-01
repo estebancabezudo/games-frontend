@@ -4,6 +4,7 @@ import { createActorsRuntime } from "../actors-runtime.js";
 import { createGameModel, initialSceneModel } from "../game-model.js";
 import { createGameState } from "../game-state.js";
 import { createItemCatalog } from "../item-model.js";
+import { applyFlagEffects, createFlagEffects } from "../flag-effects.js";
 
 function scene(id, overrides = {}) {
   return {
@@ -47,6 +48,88 @@ test("creates a game with one scene and selects initial_scene", () => {
   assert.equal(game.scenes.length, 1);
   assert.equal(initialSceneModel(game).sceneId, "kitchen");
   assert.deepEqual(game.initialState, { inventory: [], flags: { power_on: false } });
+});
+
+test("initialState preserves and, or, and chained computed flag definitions", () => {
+  const document = documentWithScenes([scene("kitchen")]);
+  document.state.flags = {
+    electricity_on: true,
+    light_switch_on: false,
+    light_on: "electricity_on and light_switch_on",
+    battery_on: false,
+    emergency_light_on: "battery_on or electricity_on",
+    room_ready: "light_on or emergency_light_on",
+  };
+  const items = createItemCatalog(document.items);
+  const gameState = createGameState(document, items);
+  const game = createGameModel(document, gameState, items);
+
+  assert.equal(game.initialState.flags.light_on, false);
+  assert.equal(game.initialState.flags.emergency_light_on, true);
+  assert.equal(game.initialState.flags.room_ready, true);
+
+  game.initialState.flags.light_switch_on = true;
+  assert.equal(game.initialState.flags.light_on, true);
+  assert.equal(game.initialState.flags.room_ready, true);
+});
+
+test("initialState flags are independent from the original gameState", () => {
+  const document = documentWithScenes([scene("kitchen")]);
+  document.state.flags = {
+    electricity_on: true,
+    light_switch_on: false,
+    light_on: "electricity_on and light_switch_on",
+  };
+  const items = createItemCatalog(document.items);
+  const gameState = createGameState(document, items);
+  const game = createGameModel(document, gameState, items);
+
+  game.initialState.flags.light_switch_on = true;
+  assert.equal(game.initialState.flags.light_on, true);
+  assert.equal(gameState.flags.light_switch_on, false);
+  assert.equal(gameState.flags.light_on, false);
+
+  gameState.flags.electricity_on = false;
+  assert.equal(game.initialState.flags.electricity_on, true);
+  assert.equal(game.initialState.flags.light_on, true);
+});
+
+test("initialState keeps computed flags protected during validation and runtime", () => {
+  const document = documentWithScenes([scene("kitchen")]);
+  document.state.flags = {
+    electricity_on: true,
+    light_switch_on: false,
+    light_on: "electricity_on and light_switch_on",
+  };
+  const game = model(document);
+
+  assert.throws(
+    () => createFlagEffects(
+      [{ set_flag: "light_on" }],
+      game.initialState,
+      "effects",
+    ),
+    /set_flag.*flag calculado: light_on/,
+  );
+  assert.throws(
+    () => applyFlagEffects(
+      game.initialState,
+      [{ type: "toggle_flag", flag: "light_on" }],
+    ),
+    /toggle_flag.*flag calculado: light_on/,
+  );
+});
+
+test("initialState copies legacy boolean flags independently", () => {
+  const document = documentWithScenes([scene("kitchen")]);
+  document.state.flags = { power_on: false, door_open: true };
+  const items = createItemCatalog(document.items);
+  const gameState = createGameState(document, items);
+  const game = createGameModel(document, gameState, items);
+
+  assert.deepEqual(game.initialState.flags, { power_on: false, door_open: true });
+  game.initialState.flags.power_on = true;
+  assert.equal(gameState.flags.power_on, false);
 });
 
 test("creates and validates two independent scene models", () => {

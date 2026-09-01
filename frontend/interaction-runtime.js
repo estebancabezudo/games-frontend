@@ -1,4 +1,5 @@
 import { resolveActorInteractionEffects } from "./actor-interaction-variants.js";
+import { hotspotIsEnabled } from "./hotspot-availability.js";
 
 export function createInteractionRuntime() {
   return { pendingInteraction: null };
@@ -43,7 +44,12 @@ export function resolvePendingInteraction(
   gameState,
   actorsRuntime = {},
 ) {
-  const target = resolveTarget(pendingInteraction, sceneModel, actorsRuntime);
+  const target = resolveTarget(
+    pendingInteraction,
+    sceneModel,
+    actorsRuntime,
+    gameState,
+  );
 
   if (pendingInteraction.itemId !== null) {
     if (!gameState.inventory.includes(pendingInteraction.itemId)) {
@@ -76,13 +82,16 @@ export function resolvePendingInteraction(
   };
 }
 
-function resolveTarget(pendingInteraction, sceneModel, actorsRuntime) {
+function resolveTarget(pendingInteraction, sceneModel, actorsRuntime, gameState) {
   if (pendingInteraction.targetType === "hotspot") {
     const hotspot = sceneModel.hotspots.find(
       (candidate) => candidate.id === pendingInteraction.targetId,
     );
     if (hotspot === undefined) {
       throw new Error(`El hotspot pendiente ${pendingInteraction.targetId} ya no existe.`);
+    }
+    if (!hotspotIsEnabled(hotspot, gameState)) {
+      throw new Error(`El hotspot ${hotspot.id} está deshabilitado.`);
     }
     return { id: hotspot.id, label: "Hotspot", effects: hotspot.effects };
   }

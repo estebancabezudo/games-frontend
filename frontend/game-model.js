@@ -1,4 +1,5 @@
 import { createSceneModel } from "./scene-model.js";
+import { copyFlagsState } from "./flag-state.js";
 
 export function createGameModel(document, gameState, items = []) {
   const gameId = requiredText(document?.game?.id, "game.id");
@@ -18,7 +19,7 @@ export function createGameModel(document, gameState, items = []) {
     items,
     initialState: {
       inventory: [...gameState.inventory],
-      flags: { ...gameState.flags },
+      flags: copyFlagsState(gameState.flags),
     },
     scenes,
   };

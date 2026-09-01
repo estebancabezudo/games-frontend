@@ -46,6 +46,11 @@ test("scene runtime resources are independent and use declared actor positions",
   assert.deepEqual(houseRuntime.actorsRuntime.player.position, { x: 500, y: 600 });
   assert.equal(houseRuntime.actorsRuntime.dog, undefined);
   assert.notEqual(houseRuntime.actorsRuntime, yardRuntime.actorsRuntime);
+  assert.deepEqual(houseRuntime.sceneObjectRuntime, {
+    pendingObjectId: null,
+    activeLocationId: null,
+    selectedObjectId: null,
+  });
   assert.equal(Object.hasOwn(houseRuntime, "proximityRuntime"), false);
 
   const recreatedYard = createSceneRuntimeResources(yard);
@@ -61,6 +66,9 @@ test("disposing a scene stops loops and clears transient runtimes", () => {
   resources.actorsRuntime.player.route = [{ x: 500, y: 800 }];
   resources.actorsRuntime.player.motion = "walking";
   resources.interactionRuntime.pendingInteraction = { targetType: "hotspot", targetId: "door" };
+  resources.sceneObjectRuntime.pendingObjectId = "brass_key";
+  resources.sceneObjectRuntime.activeLocationId = "table";
+  resources.sceneObjectRuntime.selectedObjectId = "brass_key";
   resources.walkArrivalRuntime.pendingWalkArrival = { nodeId: "door" };
   resources.dialogueRuntime.currentDialogue = { dialogueId: "hello", lineIndex: 0 };
   resources.dialogueSession.participantIds = ["player"];
@@ -91,6 +99,11 @@ test("disposing a scene stops loops and clears transient runtimes", () => {
   assert.deepEqual(resources.actorsRuntime.player.route, []);
   assert.equal(resources.actorsRuntime.player.motion, "idle");
   assert.equal(resources.interactionRuntime.pendingInteraction, null);
+  assert.deepEqual(resources.sceneObjectRuntime, {
+    pendingObjectId: null,
+    activeLocationId: null,
+    selectedObjectId: null,
+  });
   assert.equal(resources.walkArrivalRuntime.pendingWalkArrival, null);
   assert.equal(resources.dialogueRuntime.currentDialogue, null);
   assert.deepEqual(resources.dialogueSession.participantIds, []);

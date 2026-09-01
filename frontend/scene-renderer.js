@@ -26,6 +26,9 @@ import {
 import { screenPointToWorld } from "./scene-coordinates.js";
 import { resolveSvgAssetUrl } from "./svg-asset.js";
 import { walkSegmentIsEnabled } from "./walk-model.js";
+import { hotspotIsEnabled } from "./hotspot-availability.js";
+import { createSceneObjectHoverController } from "./scene-object-hover.js";
+import { sceneObjectIsAvailable } from "./scene-object-availability.js";
 
 const PREVIEW_INSET = 24;
 
@@ -40,6 +43,8 @@ export function createSceneRenderer(
   const walkLayer = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   const hotspotsLayer = document.createElement("div");
   const label = document.createElement("span");
+  const objectName = document.createElement("span");
+  const objectHover = createSceneObjectHoverController(objectName);
   let sceneModel = null;
   let gameState = null;
   let actorsRuntime = {};
@@ -58,7 +63,10 @@ export function createSceneRenderer(
   walkLayer.setAttribute("aria-label", "Walk paths (development)");
   hotspotsLayer.className = "scene-hotspots";
   label.className = "scene-label";
-  canvas.append(elementsLayer, walkLayer, hotspotsLayer, label);
+  objectName.className = "scene-object-name";
+  objectName.setAttribute("aria-live", "polite");
+  objectHover.clear();
+  canvas.append(elementsLayer, walkLayer, hotspotsLayer, label, objectName);
   canvas.addEventListener("click", (event) => {
     const bounds = canvas.getBoundingClientRect();
     handleScenePressEvent(
@@ -77,6 +85,7 @@ export function createSceneRenderer(
   return {
     clear() {
       stopActorAnimationFrame();
+      objectHover.clear();
       sceneModel = null;
       gameState = null;
       actorsRuntime = {};
@@ -89,6 +98,7 @@ export function createSceneRenderer(
       canvas.hidden = true;
     },
     render(model, state, runtimeByActor = {}) {
+      objectHover.clear();
       const resetScene = model !== sceneModel;
       if (resetScene) {
         stopActorAnimationFrame();
@@ -395,12 +405,43 @@ export function createSceneRenderer(
 
   function renderHotspots() {
     hotspotNodes = sceneModel.hotspots.map((hotspot) => {
+      const sceneObject = sceneModel.objects.find((candidate) => (
+        candidate.hotspotId === hotspot.id
+      ));
       const node = document.createElement("button");
       node.type = "button";
       node.className = "scene-hotspot";
       node.textContent = hotspot.id;
-      node.setAttribute("aria-label", `Hotspot: ${hotspot.id}`);
+      node.dataset.hotspotId = hotspot.id;
+      node.setAttribute(
+        "aria-label",
+        sceneObject === undefined ? `Hotspot: ${hotspot.id}` : `Objeto: ${sceneObject.name}`,
+      );
+      if (sceneObject !== undefined) {
+        node.dataset.objectId = sceneObject.id;
+        objectHover.bind(
+          node,
+          sceneObject,
+          () => sceneObjectIsAvailable(sceneObject, sceneModel, gameState),
+        );
+      }
+      updateHotspotButtonAvailability(
+        node,
+        hotspot,
+        gameState,
+        sceneObject === undefined
+          ? undefined
+          : sceneObjectIsAvailable(sceneObject, sceneModel, gameState),
+      );
       node.addEventListener("click", (event) => {
+        if (
+          !hotspotIsEnabled(hotspot, gameState)
+          || (sceneObject !== undefined
+            && !sceneObjectIsAvailable(sceneObject, sceneModel, gameState))
+        ) {
+          event.stopPropagation();
+          return;
+        }
         handleHotspotPressEvent(event, hotspot, onHotspotPress);
       });
       return node;
@@ -563,6 +604,21 @@ export function handleHotspotPressEvent(event, hotspot, onHotspotPress) {
   event.stopPropagation();
   onHotspotPress(hotspot);
   return true;
+}
+
+export function updateHotspotButtonAvailability(
+  node,
+  hotspot,
+  gameState,
+  objectAvailable,
+) {
+  const enabled = hotspotIsEnabled(hotspot, gameState)
+    && objectAvailable !== false;
+  node.hidden = !enabled;
+  node.disabled = !enabled;
+  node.dataset.enabled = String(enabled);
+  node.setAttribute("aria-disabled", String(!enabled));
+  return enabled;
 }
 
 export function fitSceneInPreview(sceneSize, previewSize) {

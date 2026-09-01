@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3000 1920" role="img" aria-label="Patio iluminado">
+  <rect width="3000" height="1920" fill="#d9c98d"/>
+  <rect y="520" width="3000" height="1400" fill="#7ca36b"/>
+  <path d="M0 520h3000v90H0z" fill="#bca76d"/>
+  <path d="M0 1420c560-150 1050-80 1500 20 510 115 1010 125 1500-30v510H0z" fill="#658b5d"/>
+  <rect x="2050" y="170" width="610" height="470" rx="24" fill="#9ed5e8" stroke="#eee3bc" stroke-width="30"/>
+  <path d="M2355 185v440M2070 405h575" stroke="#eee3bc" stroke-width="24"/>
+  <circle cx="260" cy="260" r="78" fill="#fff2a8"/>
+  <path d="M0 1680h3000" stroke="#91b47b" stroke-width="34" stroke-dasharray="150 70"/>
+</svg>

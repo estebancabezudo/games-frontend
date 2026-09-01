@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 350" role="img" aria-label="Mesa sin iluminación">
+  <path d="M42 86h416l-34 102H76z" fill="#513c32" stroke="#271f1b" stroke-width="14"/>
+  <path d="M91 182h54l-18 148H77zm264 0h54l17 148h-50z" fill="#392b25"/>
+  <path d="M62 98h376M83 139h349" stroke="#74564a" stroke-width="8" opacity=".55"/>
+</svg>

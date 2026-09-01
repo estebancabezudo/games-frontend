@@ -42,7 +42,26 @@ import {
   setPendingInteraction,
   takePendingInteraction,
 } from "./interaction-runtime.js";
+import { hotspotIsEnabled } from "./hotspot-availability.js";
 import { createSceneRenderer } from "./scene-renderer.js";
+import {
+  availableSceneObjects,
+  clearSceneObjectInteraction,
+  completePendingSceneObject,
+  createSceneObjectInteractionRuntime,
+  reconcileSceneObjectContext,
+  selectSceneObject,
+  setPendingSceneObject,
+} from "./scene-object-runtime.js";
+import { renderNearbyObjects } from "./scene-object-view.js";
+import { sceneObjectIsAvailable } from "./scene-object-availability.js";
+import { resolveSelectedSceneObjectAction } from "./scene-object-actions.js";
+import {
+  beginActorInteraction,
+  beginFreeNavigation,
+  beginNormalHotspotInteraction,
+  hotspotActivationTarget,
+} from "./scene-object-coordination.js";
 import {
   createSceneRuntimeResources,
   disposeSceneRuntimeResources,
@@ -64,6 +83,9 @@ const stateView = document.querySelector("#state-view");
 const stateOutput = document.querySelector("#state-output");
 const inventoryItems = document.querySelector("#inventory-items");
 const interactionStatus = document.querySelector("#interaction-status");
+const nearbyObjectsPanel = document.querySelector("#nearby-objects-panel");
+const nearbyObjects = document.querySelector("#nearby-objects");
+const nearbyObjectActions = document.querySelector("#nearby-object-actions");
 const dialogueView = document.querySelector("#dialogue-view");
 const dialogueActor = document.querySelector("#dialogue-actor");
 const dialogueText = document.querySelector("#dialogue-text");
@@ -79,6 +101,7 @@ let currentCharacterMovement = null;
 let currentActorsRuntime = {};
 let currentActorMovements = new Map();
 let interactionRuntime = createInteractionRuntime();
+let sceneObjectRuntime = createSceneObjectInteractionRuntime();
 let walkArrivalRuntime = createWalkArrivalRuntime();
 let dialogueRuntime = createDialogueRuntime();
 let dialogueSession = createDialogueSessionRuntime();
@@ -146,6 +169,7 @@ function activateScene(sceneId) {
   const resources = createSceneRuntimeResources(sceneModel);
   selectedInventoryItem = resources.selectedInventoryItem;
   interactionRuntime = resources.interactionRuntime;
+  sceneObjectRuntime = resources.sceneObjectRuntime;
   walkArrivalRuntime = resources.walkArrivalRuntime;
   dialogueRuntime = resources.dialogueRuntime;
   dialogueSession = resources.dialogueSession;
@@ -185,6 +209,7 @@ function deactivateCurrentScene() {
     actorsRuntime: currentActorsRuntime,
     actorMovements: currentActorMovements,
     interactionRuntime,
+    sceneObjectRuntime,
     walkArrivalRuntime,
     dialogueRuntime,
     dialogueSession,
@@ -198,10 +223,12 @@ function deactivateCurrentScene() {
   currentActorsRuntime = {};
   currentActorMovements = new Map();
   interactionRuntime = createInteractionRuntime();
+  sceneObjectRuntime = createSceneObjectInteractionRuntime();
   walkArrivalRuntime = createWalkArrivalRuntime();
   dialogueRuntime = createDialogueRuntime();
   dialogueSession = createDialogueSessionRuntime();
   dialogueTalkingRuntime = createDialogueTalkingRuntime();
+  showNearbyObjects();
   sceneDeactivating = false;
 }
 
@@ -223,6 +250,29 @@ function activateHotspot(hotspot) {
   if (!currentGameState || dialogueBlocksGameInput(dialogueRuntime)) {
     return;
   }
+  if (!hotspotIsEnabled(hotspot, currentGameState)) {
+    cancelPendingInteraction(interactionRuntime);
+    interactionStatus.textContent = `El hotspot ${hotspot.id} está deshabilitado.`;
+    showCurrentState();
+    return;
+  }
+  const activationTarget = hotspotActivationTarget(currentSceneModel, hotspot.id);
+  if (activationTarget.type === "scene-object") {
+    if (!sceneObjectIsAvailable(
+      activationTarget.sceneObject,
+      currentSceneModel,
+      currentGameState,
+    )) {
+      clearSceneObjectInteraction(sceneObjectRuntime);
+      showNearbyObjects();
+      interactionStatus.textContent = `El objeto ${activationTarget.sceneObject.name} no está disponible.`;
+      showCurrentState();
+      return;
+    }
+    approachSceneObject(activationTarget.sceneObject, hotspot);
+    return;
+  }
+  beginNormalHotspotInteraction(sceneObjectRuntime, showNearbyObjects);
   cancelPendingWalkArrival(walkArrivalRuntime);
   const capturedItemId = capturedItemForTarget(
     "hotspot",
@@ -272,6 +322,7 @@ function activateActor(actor) {
   ) {
     return;
   }
+  beginActorInteraction(sceneObjectRuntime, showNearbyObjects);
   cancelPendingWalkArrival(walkArrivalRuntime);
   cancelPendingInteraction(interactionRuntime);
   const capturedItemId = capturedItemForTarget(
@@ -287,6 +338,52 @@ function activateActor(actor) {
     return;
   }
   approachActor(actor, capturedItemId);
+}
+
+function approachSceneObject(sceneObject, hotspot) {
+  clearSceneObjectInteraction(sceneObjectRuntime);
+  cancelPendingInteraction(interactionRuntime);
+  cancelPendingWalkArrival(walkArrivalRuntime);
+  showNearbyObjects();
+  if (currentCharacterRuntime === null || currentCharacterMovement === null) {
+    interactionStatus.textContent = "No existe un personaje que pueda acercarse al objeto.";
+    showCurrentState();
+    return;
+  }
+  if (!sceneObjectIsAvailable(sceneObject, currentSceneModel, currentGameState)) {
+    interactionStatus.textContent = `El objeto ${sceneObject.name} no está disponible.`;
+    showCurrentState();
+    return;
+  }
+
+  try {
+    const route = calculateHotspotApproachRoute(
+      currentSceneModel.walk,
+      currentCharacterRuntime.position,
+      hotspot,
+      currentGameState,
+    );
+    setPendingSceneObject(sceneObjectRuntime, sceneObject.id);
+    setCharacterRoute(currentCharacterRuntime, route, currentSceneModel.size);
+    interactionStatus.textContent = `Acercándose a ${sceneObject.name}.`;
+    showCurrentState();
+    if (currentCharacterRuntime.destination === null) {
+      updateRuntimeCharacter(
+        currentCharacterRuntime.position,
+        currentCharacterRuntime.facing,
+        currentCharacterRuntime.motion,
+      );
+      completeControlledActorRoute();
+    } else {
+      currentCharacterMovement.start();
+    }
+  } catch (error) {
+    currentCharacterMovement.stop();
+    clearSceneObjectInteraction(sceneObjectRuntime);
+    showNearbyObjects();
+    interactionStatus.textContent = errorMessage("No se pudo llegar al objeto", error);
+    showCurrentState();
+  }
 }
 
 function approachHotspot(hotspot, capturedItemId) {
@@ -399,6 +496,25 @@ function completePendingInteraction() {
 }
 
 function completeControlledActorRoute() {
+  if (sceneObjectRuntime.pendingObjectId !== null) {
+    cancelPendingInteraction(interactionRuntime);
+    cancelPendingWalkArrival(walkArrivalRuntime);
+    try {
+      const sceneObject = completePendingSceneObject(
+        sceneObjectRuntime,
+        currentSceneModel,
+        currentGameState,
+      );
+      showNearbyObjects();
+      interactionStatus.textContent = `Objeto alcanzado: ${sceneObject.name}.`;
+    } catch (error) {
+      clearSceneObjectInteraction(sceneObjectRuntime);
+      showNearbyObjects();
+      interactionStatus.textContent = errorMessage("No se activó el objeto", error);
+    }
+    showCurrentState();
+    return;
+  }
   if (interactionRuntime.pendingInteraction !== null) {
     cancelPendingWalkArrival(walkArrivalRuntime);
     completePendingInteraction();
@@ -498,6 +614,7 @@ function showCurrentState() {
           speakerId: dialogueSession.speakerId,
           talking: dialogueTalkingRuntime.talking,
         },
+      objectInteraction: { ...sceneObjectRuntime },
     };
   stateOutput.textContent = JSON.stringify(developmentState, null, 2);
 }
@@ -508,12 +625,14 @@ function renderCurrentScene() {
     currentGameState,
     currentActorsRuntime,
   );
+  showNearbyObjects();
 }
 
 function moveCharacterTo(destination) {
   if (dialogueBlocksGameInput(dialogueRuntime)) {
     return;
   }
+  beginFreeNavigation(sceneObjectRuntime, showNearbyObjects);
   cancelPendingInteraction(interactionRuntime);
   cancelPendingWalkArrival(walkArrivalRuntime);
   if (
@@ -549,6 +668,57 @@ function moveCharacterTo(destination) {
     cancelPendingWalkArrival(walkArrivalRuntime);
     interactionStatus.textContent = errorMessage("Ruta inválida", error);
     showCurrentState();
+  }
+}
+
+function showNearbyObjects() {
+  const availableObjects = currentSceneModel === null || currentGameState === null
+    ? []
+    : availableSceneObjects(currentSceneModel, currentGameState, sceneObjectRuntime);
+  reconcileSceneObjectContext(sceneObjectRuntime, availableObjects);
+  renderNearbyObjects(
+    nearbyObjectsPanel,
+    nearbyObjects,
+    availableObjects,
+    sceneObjectRuntime.selectedObjectId,
+    (objectId) => {
+      selectSceneObject(sceneObjectRuntime, objectId, availableObjects);
+      showNearbyObjects();
+      showCurrentState();
+    },
+    {
+      actionsContainer: nearbyObjectActions,
+      actionsDisabled: dialogueBlocksGameInput(dialogueRuntime),
+      gameState: currentGameState,
+      onAction: activateSceneObjectAction,
+    },
+  );
+}
+
+function activateSceneObjectAction(objectId, actionId) {
+  if (
+    currentSceneModel === null
+    || currentGameState === null
+    || dialogueBlocksGameInput(dialogueRuntime)
+  ) {
+    return;
+  }
+  try {
+    const { sceneObject, action } = resolveSelectedSceneObjectAction(
+      currentSceneModel,
+      currentGameState,
+      sceneObjectRuntime,
+      objectId,
+      actionId,
+    );
+    applyEffectsAndRender(
+      action.effects,
+      `${action.label}: ${sceneObject.name}.`,
+    );
+  } catch (error) {
+    showNearbyObjects();
+    showCurrentState();
+    interactionStatus.textContent = errorMessage("No se ejecutó la acción del objeto", error);
   }
 }
 
@@ -719,6 +889,7 @@ function continueDialogue() {
     startDialogueLineTalking(nextLine);
   }
   renderDialogue();
+  showNearbyObjects();
   showCurrentState();
   interactionStatus.textContent = nextLine === null
     ? firstAutonomousError() ?? "Diálogo terminado."

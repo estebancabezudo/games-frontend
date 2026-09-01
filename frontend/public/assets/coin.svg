@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" role="img" aria-labelledby="title">
+  <title id="title">Moneda</title>
+  <circle cx="30" cy="30" r="26" fill="#e8b83f" stroke="#765316" stroke-width="5"/>
+  <circle cx="30" cy="30" r="17" fill="#ffd96a" stroke="#b98220" stroke-width="3"/>
+  <path d="M30 18v24M23 24h11a6 6 0 0 1 0 12H23" fill="none" stroke="#8a6118" stroke-width="4" stroke-linecap="round"/>
+</svg>

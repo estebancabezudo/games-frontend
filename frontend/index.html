@@ -29,18 +29,26 @@
 items:
   - id: dog_food
   - id: brass_key
+  - id: coin
 
 state:
   inventory:
     - dog_food
   flags:
     door_open: false
-    light_on: false
+    electricity_on: true
+    light_switch_on: false
+    light_on: electricity_on and light_switch_on
+    battery_on: false
+    emergency_light_on: battery_on or electricity_on
     dog_fed: false
     dog_angry: false
     waiter_met: false
     lever_on: false
     brass_key_taken: false
+    drawer_open: false
+    coin_in_drawer: true
+    drawer_contents_visible: drawer_open and coin_in_drawer
 
 scenes:
   - id: yard
@@ -292,6 +300,18 @@ scenes:
         lines:
           - actor: player
             text: "No puedo pasar por aquí."
+      - id: brass_key_look
+        lines:
+          - actor: player
+            text: "Esta llave puede ser útil."
+      - id: drawer_coin_look
+        lines:
+          - actor: player
+            text: "Es una moneda."
+      - id: drawer_empty_look
+        lines:
+          - actor: player
+            text: "El cajón está vacío."
 
     walk:
       nodes:
@@ -340,24 +360,43 @@ scenes:
             value: true
 
     elements:
+      - id: yard_background
+        x: 0
+        y: 0
+        width: 3000
+        height: 1920
+        asset: "assets/yard-background-dark.svg"
+        z: -1000
+        variants:
+          - when:
+              flag: light_on
+              value: true
+            asset: "assets/yard-background-light.svg"
       - id: table
         x: 290
         y: 700
         width: 500
         height: 350
-        color: "#996633"
+        asset: "assets/table-dark.svg"
         z: 10
         depth_y: 950
-      - id: dark_overlay
-        x: 0
-        y: 0
-        width: 3000
-        height: 1920
-        color: "#000000"
-        z: -100
-        visible_when:
-          flag: light_on
-          value: false
+        variants:
+          - when:
+              flag: light_on
+              value: true
+            asset: "assets/table-light.svg"
+      - id: light_switch
+        x: 100
+        y: 100
+        width: 100
+        height: 100
+        asset: "assets/light-switch-off.svg"
+        z: 15
+        variants:
+          - when:
+              flag: light_switch_on
+              value: true
+            asset: "assets/light-switch-on.svg"
       - id: lever
         x: 2400
         y: 600
@@ -380,6 +419,28 @@ scenes:
         visible_when:
           flag: brass_key_taken
           value: false
+      - id: table_drawer
+        x: 450
+        y: 820
+        width: 220
+        height: 120
+        asset: "assets/drawer-closed.svg"
+        z: 20
+        variants:
+          - when:
+              flag: drawer_open
+              value: true
+            asset: "assets/drawer-open.svg"
+      - id: drawer_coin
+        x: 530
+        y: 860
+        width: 60
+        height: 60
+        asset: "assets/coin.svg"
+        z: 21
+        visible_when:
+          flag: drawer_contents_visible
+          value: true
 
     hotspots:
       - id: light_switch
@@ -388,8 +449,11 @@ scenes:
           y: 100
           width: 100
           height: 100
+        approach:
+          x: 300
+          y: 1400
         effects:
-          - toggle_flag: light_on
+          - toggle_flag: light_switch_on
       - id: lever_switch
         area:
           x: 2400
@@ -402,6 +466,9 @@ scenes:
         effects:
           - toggle_flag: lever_on
       - id: brass_key_on_table
+        enabled_when:
+          flag: brass_key_taken
+          value: false
         area:
           x: 1900
           y: 700
@@ -410,9 +477,27 @@ scenes:
         approach:
           x: 2000
           y: 700
-        effects:
-          - give_item: brass_key
-          - set_flag: brass_key_taken
+      - id: table_drawer
+        area:
+          x: 450
+          y: 820
+          width: 220
+          height: 120
+        approach:
+          x: 1000
+          y: 1200
+      - id: drawer_coin
+        enabled_when:
+          flag: drawer_contents_visible
+          value: true
+        area:
+          x: 530
+          y: 860
+          width: 60
+          height: 60
+        approach:
+          x: 1000
+          y: 1200
       - id: house_door
         area:
           x: 1450
@@ -424,6 +509,58 @@ scenes:
           y: 800
         effects:
           - change_scene: house
+
+    objects:
+      - id: brass_key
+        name: "Llave"
+        element: brass_key
+        hotspot: brass_key_on_table
+        location: table
+        actions:
+          - id: look
+            label: "Mirar"
+            effects:
+              - start_dialogue: brass_key_look
+          - id: take
+            label: "Tomar"
+            effects:
+              - give_item: brass_key
+              - set_flag: brass_key_taken
+      - id: table_drawer
+        name: "Cajón"
+        element: table_drawer
+        hotspot: table_drawer
+        location: table_drawer
+        actions:
+          - id: open
+            label: "Abrir"
+            enabled_when:
+              flag: drawer_open
+              value: false
+            effects:
+              - set_flag: drawer_open
+          - id: look_empty
+            label: "Mirar"
+            enabled_when:
+              flag: coin_in_drawer
+              value: false
+            effects:
+              - start_dialogue: drawer_empty_look
+      - id: drawer_coin
+        name: "Moneda"
+        element: drawer_coin
+        hotspot: drawer_coin
+        location: table_drawer
+        actions:
+          - id: look
+            label: "Mirar"
+            effects:
+              - start_dialogue: drawer_coin_look
+          - id: take
+            label: "Tomar"
+            effects:
+              - give_item: coin
+              - clear_flag: coin_in_drawer
 
     interaction:
       use:
@@ -494,6 +631,11 @@ scenes:
           <p id="yaml-error" role="alert" hidden></p>
           <aside id="state-view" class="state-view" aria-labelledby="state-title">
             <h3 id="state-title">State (development)</h3>
+            <section id="nearby-objects-panel" class="nearby-objects-panel" aria-labelledby="nearby-objects-title" hidden>
+              <h4 id="nearby-objects-title">Objetos cercanos</h4>
+              <div id="nearby-objects" class="nearby-objects" aria-label="Objetos cercanos"></div>
+              <div id="nearby-object-actions" class="nearby-object-actions" aria-label="Acciones del objeto seleccionado" hidden></div>
+            </section>
             <div id="inventory-items" class="inventory-items" aria-label="Inventory"></div>
             <p id="interaction-status" class="interaction-status" aria-live="polite"></p>
             <pre id="state-output"></pre>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Llave de luz encendida">
+  <rect x="9" y="5" width="82" height="90" rx="10" fill="#fff2b2" stroke="#8a6d22" stroke-width="6"/>
+  <rect x="35" y="23" width="30" height="55" rx="8" fill="#f2c84b" stroke="#8a6d22" stroke-width="5"/>
+  <path d="M39 28h22v21H39z" fill="#fff6c8"/>
+  <path d="M50 0v-8M18 12l-7-8m71 8 7-8" stroke="#ffd85a" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="50" cy="14" r="3" fill="#8a6d22"/>
+  <circle cx="50" cy="86" r="3" fill="#8a6d22"/>
+</svg>

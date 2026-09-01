@@ -1,3 +1,5 @@
+import { requireMutableFlag } from "./flag-state.js";
+
 const SUPPORTED_FLAG_EFFECTS = new Set([
   "set_flag",
   "clear_flag",
@@ -18,9 +20,7 @@ export function createFlagEffects(value, gameState, path) {
 
 export function applyFlagEffects(gameState, effects) {
   for (const effect of effects) {
-    if (!Object.hasOwn(gameState.flags, effect.flag)) {
-      throw new Error(`El flag no está declarado en state.flags: ${effect.flag}.`);
-    }
+    requireMutableFlag(gameState, effect.flag, effect.type, effect.type);
 
     if (effect.type === "set_flag") {
       gameState.flags[effect.flag] = true;
@@ -46,9 +46,7 @@ export function createFlagEffect(value, gameState, path) {
 
   const [type, rawFlag] = entries[0];
   const flag = requiredText(rawFlag, `${path}.${type}`);
-  if (!Object.hasOwn(gameState.flags, flag)) {
-    throw new Error(`${path}.${type} refiere a un flag no declarado: ${flag}.`);
-  }
+  requireMutableFlag(gameState, flag, type, `${path}.${type}`);
 
   return { type, flag };
 }

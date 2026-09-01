@@ -2,6 +2,7 @@ import { createSceneActor } from "./actor-model.js";
 import { resolveSceneElementVariant } from "./element-variants.js";
 import { createFlagCondition } from "./flag-condition.js";
 import { createGameActions } from "./game-actions.js";
+import { createHotspotAvailability } from "./hotspot-availability.js";
 import {
   createDialogueModel,
   validateDialogueActors,
@@ -10,6 +11,7 @@ import { createDepthScale } from "./scene-depth.js";
 import { createSvgAssetPath } from "./svg-asset.js";
 import { createWalkModel } from "./walk-model.js";
 import { createUseInteraction } from "./interaction-model.js";
+import { createSceneObjects } from "./scene-object-model.js";
 
 const SUPPORTED_ORIENTATIONS = new Set(["portrait", "landscape"]);
 
@@ -21,6 +23,14 @@ export function createSceneModel(definition, gameState, items = [], context = {}
   const dialogues = createDialogueModel(scene?.dialogues);
   const actorModel = sceneActors(scene, gameState, dialogues, items);
   validateDialogueActors(dialogues, actorModel.actors);
+  const elements = sceneElements(scene?.elements, gameState);
+  const hotspots = sceneHotspots(
+    scene?.hotspots,
+    gameState,
+    dialogues,
+    items,
+    context.sceneIds,
+  );
   const model = {
     gameId,
     sceneId: requiredText(scene?.id, "scene.id"),
@@ -37,13 +47,15 @@ export function createSceneModel(definition, gameState, items = [], context = {}
     dialogues,
     items,
     walk: createWalkModel(scene?.walk, gameState, dialogues, items, context.sceneIds),
-    elements: sceneElements(scene?.elements, gameState),
-    hotspots: sceneHotspots(
-      scene?.hotspots,
+    elements,
+    hotspots,
+    objects: createSceneObjects(
+      scene?.objects,
+      elements,
+      hotspots,
       gameState,
       dialogues,
       items,
-      context.sceneIds,
     ),
   };
   model.useInteraction = createUseInteraction(scene, model, gameState);
@@ -119,6 +131,11 @@ function sceneHotspots(value, gameState, dialogues, items, sceneIds) {
 
     return {
       id: requiredText(hotspot?.id, `${path}.id`),
+      enabledWhen: createHotspotAvailability(
+        hotspot?.enabled_when,
+        gameState,
+        `${path}.enabled_when`,
+      ),
       area: {
         x: requiredCoordinate(hotspot?.area?.x, `${path}.area.x`),
         y: requiredCoordinate(hotspot?.area?.y, `${path}.area.y`),

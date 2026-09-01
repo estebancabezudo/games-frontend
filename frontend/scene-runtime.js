@@ -7,6 +7,10 @@ import {
 } from "./dialogue-timing.js";
 import { createInteractionRuntime } from "./interaction-runtime.js";
 import { createWalkArrivalRuntime } from "./walk-arrival-runtime.js";
+import {
+  clearSceneObjectInteraction,
+  createSceneObjectInteractionRuntime,
+} from "./scene-object-runtime.js";
 
 export function createSceneRuntimeResources(sceneModel) {
   const actorsRuntime = createActorsRuntime(
@@ -23,6 +27,7 @@ export function createSceneRuntimeResources(sceneModel) {
     ),
     actorMovements: new Map(),
     interactionRuntime: createInteractionRuntime(),
+    sceneObjectRuntime: createSceneObjectInteractionRuntime(),
     walkArrivalRuntime: createWalkArrivalRuntime(),
     dialogueRuntime: createDialogueRuntime(),
     dialogueSession: createDialogueSessionRuntime(),
@@ -44,6 +49,7 @@ export function disposeSceneRuntimeResources(resources, renderer = null) {
   });
   resources.actorMovements.clear();
   resources.interactionRuntime.pendingInteraction = null;
+  clearSceneObjectInteraction(resources.sceneObjectRuntime);
   resources.walkArrivalRuntime.pendingWalkArrival = null;
   resources.dialogueRuntime.currentDialogue = null;
   cancelDialogueTalking(resources.dialogueTalkingRuntime);
