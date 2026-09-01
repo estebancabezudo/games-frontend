@@ -124,8 +124,8 @@ test("drawer and coin share an accessible location but only the drawer is initia
 
   assert.equal(drawer.locationId, "table_drawer");
   assert.equal(coin.locationId, "table_drawer");
-  assert.deepEqual(drawerHotspot.approach, { x: 1000, y: 1200 });
-  assert.deepEqual(route.at(-1), drawerHotspot.approach);
+  assert.deepEqual(drawerHotspot.approach, { x: 1000, y: 1200, facing: "left" });
+  assert.deepEqual(route.at(-1), { x: 1000, y: 1200 });
   assert.equal(sceneObjectIsAvailable(drawer, sceneModel, gameState), true);
   assert.equal(sceneObjectIsAvailable(coin, sceneModel, gameState), false);
   assert.deepEqual(

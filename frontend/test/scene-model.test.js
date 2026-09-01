@@ -151,7 +151,7 @@ test("creates a hotspot approach in world coordinates", () => {
     }],
   });
 
-  assert.deepEqual(model.hotspots[0].approach, { x: 550, y: 1200 });
+  assert.deepEqual(model.hotspots[0].approach, { x: 550, y: 1200, facing: null });
 });
 
 test("rejects invalid hotspot approach coordinates", () => {

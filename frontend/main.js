@@ -33,6 +33,7 @@ import { renderInventory } from "./inventory-view.js";
 import { createItemCatalog } from "./item-model.js";
 import {
   calculateHotspotApproachRoute,
+  completeHotspotApproach,
 } from "./hotspot-interaction.js";
 import {
   cancelPendingInteraction,
@@ -476,13 +477,26 @@ function completePendingInteraction() {
   }
 
   try {
-    const interaction = resolvePendingInteraction(
+    const resolveInteraction = () => resolvePendingInteraction(
       pendingInteraction,
       currentSceneModel,
       currentUseInteraction,
       currentGameState,
       currentActorsRuntime,
     );
+    const interaction = pendingInteraction.targetType === "hotspot"
+      ? completeHotspotApproach(
+        currentCharacterRuntime,
+        () => {
+          const result = resolveInteraction();
+          const hotspot = currentSceneModel.hotspots.find(
+            (candidate) => candidate.id === pendingInteraction.targetId,
+          );
+          return { hotspot, result };
+        },
+        updateRuntimeCharacter,
+      )
+      : resolveInteraction();
     if (interaction.effects.length === 0) {
       interactionStatus.textContent = interaction.successMessage;
       showCurrentState();
@@ -500,10 +514,20 @@ function completeControlledActorRoute() {
     cancelPendingInteraction(interactionRuntime);
     cancelPendingWalkArrival(walkArrivalRuntime);
     try {
-      const sceneObject = completePendingSceneObject(
-        sceneObjectRuntime,
-        currentSceneModel,
-        currentGameState,
+      const sceneObject = completeHotspotApproach(
+        currentCharacterRuntime,
+        () => {
+          const result = completePendingSceneObject(
+            sceneObjectRuntime,
+            currentSceneModel,
+            currentGameState,
+          );
+          const hotspot = currentSceneModel.hotspots.find(
+            (candidate) => candidate.id === result.hotspotId,
+          );
+          return { hotspot, result };
+        },
+        updateRuntimeCharacter,
       );
       showNearbyObjects();
       interactionStatus.textContent = `Objeto alcanzado: ${sceneObject.name}.`;

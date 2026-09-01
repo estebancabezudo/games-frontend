@@ -153,7 +153,7 @@ test("light_switch has a physical approach and changes flags only on arrival", (
     completePendingHotspot(sceneModel, gameState, switchHotspot.id);
   });
 
-  assert.deepEqual(switchHotspot.approach, { x: 300, y: 1400 });
+  assert.deepEqual(switchHotspot.approach, { x: 300, y: 1400, facing: "up" });
   assert.equal(gameState.flags.light_switch_on, false);
   assert.equal(gameState.flags.light_on, false);
 
@@ -196,7 +196,7 @@ test("the lever remains deferred until its existing approach completes", () => {
     completePendingHotspot(sceneModel, gameState, lever.id);
   });
 
-  assert.deepEqual(lever.approach, { x: 2350, y: 1120 });
+  assert.deepEqual(lever.approach, { x: 2350, y: 1120, facing: "up" });
   assert.equal(gameState.flags.lever_on, false);
   completeArrival();
   assert.equal(gameState.flags.lever_on, true);

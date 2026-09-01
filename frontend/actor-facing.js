@@ -11,9 +11,22 @@ const EIGHT_DIRECTIONS = [
   "up",
   "up_right",
 ];
+const FACINGS_BY_DIRECTIONS = new Map([
+  [1, new Set(["default"])],
+  [2, new Set(["left", "right"])],
+  [4, new Set(FOUR_DIRECTIONS)],
+  [8, new Set(EIGHT_DIRECTIONS)],
+]);
 
 export function initialActorFacing(directions) {
   return directions === 1 ? "default" : "right";
+}
+
+export function actorFacingIsSupported(facing, directions) {
+  if (!SUPPORTED_DIRECTIONS.has(directions)) {
+    throw new Error("directions debe ser 1, 2, 4 u 8.");
+  }
+  return FACINGS_BY_DIRECTIONS.get(directions).has(facing);
 }
 
 export function actorFacingFromMovement(dx, dy, directions, previousFacing) {

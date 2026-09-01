@@ -12,6 +12,7 @@ import { createSvgAssetPath } from "./svg-asset.js";
 import { createWalkModel } from "./walk-model.js";
 import { createUseInteraction } from "./interaction-model.js";
 import { createSceneObjects } from "./scene-object-model.js";
+import { actorFacingIsSupported } from "./actor-facing.js";
 
 const SUPPORTED_ORIENTATIONS = new Set(["portrait", "landscape"]);
 
@@ -30,6 +31,7 @@ export function createSceneModel(definition, gameState, items = [], context = {}
     dialogues,
     items,
     context.sceneIds,
+    actorModel.controlledActor,
   );
   const model = {
     gameId,
@@ -118,7 +120,7 @@ function sceneActors(document, gameState, dialogues, items) {
   return { actors, controlledActorId, controlledActor };
 }
 
-function sceneHotspots(value, gameState, dialogues, items, sceneIds) {
+function sceneHotspots(value, gameState, dialogues, items, sceneIds, controlledActor) {
   if (value === undefined) {
     return [];
   }
@@ -142,12 +144,7 @@ function sceneHotspots(value, gameState, dialogues, items, sceneIds) {
         width: requiredDimension(hotspot?.area?.width, `${path}.area.width`),
         height: requiredDimension(hotspot?.area?.height, `${path}.area.height`),
       },
-      approach: hotspot.approach === undefined
-        ? null
-        : {
-          x: requiredCoordinate(hotspot?.approach?.x, `${path}.approach.x`),
-          y: requiredCoordinate(hotspot?.approach?.y, `${path}.approach.y`),
-        },
+      approach: sceneHotspotApproach(hotspot.approach, controlledActor, path),
       effects: hotspot.effects === undefined
         ? []
         : createGameActions(
@@ -160,6 +157,37 @@ function sceneHotspots(value, gameState, dialogues, items, sceneIds) {
         ),
     };
   });
+}
+
+function sceneHotspotApproach(value, controlledActor, hotspotPath) {
+  if (value === undefined) {
+    return null;
+  }
+  const path = `${hotspotPath}.approach`;
+  return {
+    x: requiredCoordinate(value?.x, `${path}.x`),
+    y: requiredCoordinate(value?.y, `${path}.y`),
+    facing: value?.facing === undefined
+      ? null
+      : requiredApproachFacing(value.facing, controlledActor, `${path}.facing`),
+  };
+}
+
+function requiredApproachFacing(value, controlledActor, path) {
+  if (typeof value !== "string" || value.trim() === "") {
+    throw new Error(`${path} debe ser un texto no vacío.`);
+  }
+  const facing = value.trim();
+  if (controlledActor === null) {
+    throw new Error(`${path} requiere que la escena tenga un actor controlado.`);
+  }
+  const directions = controlledActor.visual.directions;
+  if (!actorFacingIsSupported(facing, directions)) {
+    throw new Error(
+      `${path} no es compatible con el actor controlado de ${directions} direcciones: ${facing}.`,
+    );
+  }
+  return facing;
 }
 
 function sceneElements(value, gameState) {

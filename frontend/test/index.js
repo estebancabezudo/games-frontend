@@ -28,6 +28,7 @@ import "./inventory-view.test.js";
 import "./game-actions.test.js";
 import "./horizontal-camera.test.js";
 import "./hotspot-interaction.test.js";
+import "./hotspot-approach-facing.test.js";
 import "./hotspot-availability.test.js";
 import "./lighting-assets.test.js";
 import "./interaction-model.test.js";

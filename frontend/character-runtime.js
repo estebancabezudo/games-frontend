@@ -1,5 +1,8 @@
 import { constrainCharacterPosition } from "./character-bounds.js";
-import { initialActorFacing } from "./actor-facing.js";
+import {
+  actorFacingIsSupported,
+  initialActorFacing,
+} from "./actor-facing.js";
 
 export function createCharacterRuntime(character, sceneSize, depthScale) {
   if (character === null) {
@@ -50,6 +53,17 @@ export function advanceCharacterRoute(runtime) {
   }
   runtime.destination = runtime.route[0] ?? null;
   runtime.motion = runtime.destination === null ? "idle" : "walking";
+}
+
+export function setCharacterFacing(runtime, facing) {
+  if (!actorFacingIsSupported(facing, runtime.facingDirections)) {
+    throw new Error(
+      `El facing ${facing} no es compatible con ${runtime.facingDirections} direcciones.`,
+    );
+  }
+  runtime.facing = facing;
+  runtime.motion = "idle";
+  return runtime.facing;
 }
 
 export function constrainCharacterRuntimePosition(runtime, position) {

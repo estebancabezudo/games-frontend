@@ -90,7 +90,7 @@ test("the example normalizes the table dialogue, hotspot, object, and Look actio
     width: 500,
     height: 350,
   });
-  assert.deepEqual(hotspot.approach, { x: 1000, y: 1200 });
+  assert.deepEqual(hotspot.approach, { x: 1000, y: 1200, facing: "left" });
   assert.deepEqual(hotspot.effects, []);
   assert.deepEqual(sceneObject, {
     id: "table",
@@ -134,7 +134,7 @@ test("table approach is deferred and arrival exposes only the selected table", (
       onAction() {},
     },
   );
-  assert.deepEqual(route.at(-1), hotspot.approach);
+  assert.deepEqual(route.at(-1), { x: 1000, y: 1200 });
   assert.equal(fixture.panel.hidden, true);
   assert.equal(runtime.activeLocationId, null);
   assert.equal(runtime.selectedObjectId, null);
