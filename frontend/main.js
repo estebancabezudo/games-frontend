@@ -28,6 +28,7 @@ import {
 } from "./character-runtime.js";
 import { createGameState } from "./game-state.js";
 import { createGameModel, initialSceneModel } from "./game-model.js";
+import { applySceneEntry } from "./scene-entry-runtime.js";
 import { validSelectedInventoryItem } from "./inventory-runtime.js";
 import { renderInventory } from "./inventory-view.js";
 import { createItemCatalog } from "./item-model.js";
@@ -165,7 +166,7 @@ function loadGame(gameModel, gameState) {
   activateScene(initialSceneModel(gameModel).sceneId);
 }
 
-function activateScene(sceneId) {
+function activateScene(sceneId, entryId = null) {
   const sceneModel = currentGameModel?.scenes.find(
     (candidate) => candidate.sceneId === sceneId,
   );
@@ -181,6 +182,7 @@ function activateScene(sceneId) {
     sceneModel.sceneId,
     resources.actorsRuntime,
   );
+  applySceneEntry(sceneModel, resources.actorsRuntime, entryId);
   selectedInventoryItem = resources.selectedInventoryItem;
   interactionRuntime = resources.interactionRuntime;
   sceneObjectRuntime = resources.sceneObjectRuntime;

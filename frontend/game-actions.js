@@ -48,13 +48,21 @@ export function createGameActions(
       if (options.allowChangeScene !== true) {
         throw new Error(`${actionPath}.change_scene no está permitido en este contexto.`);
       }
-      const sceneId = requiredText(rawValue, `${actionPath}.change_scene`);
+      const { sceneId, entryId } = createSceneChange(rawValue, `${actionPath}.change_scene`);
       if (!(options.sceneIds instanceof Set) || !options.sceneIds.has(sceneId)) {
         throw new Error(
           `${actionPath}.change_scene refiere a una escena inexistente: ${sceneId}.`,
         );
       }
-      return { type, sceneId };
+      if (entryId !== null && options.sceneEntryIds instanceof Map) {
+        const entryIds = options.sceneEntryIds.get(sceneId);
+        if (!(entryIds instanceof Set) || !entryIds.has(entryId)) {
+          throw new Error(
+            `${actionPath}.change_scene.entry refiere a una entrada inexistente en ${sceneId}: ${entryId}.`,
+          );
+        }
+      }
+      return { type, sceneId, entryId };
     }
     throw new Error(
       `${actionPath} debe usar set_flag, clear_flag, toggle_flag, give_item, take_item, start_dialogue o change_scene.`,
@@ -89,11 +97,30 @@ export function applyGameActions(gameState, actions, handlers = {}) {
       if (typeof handlers.changeScene !== "function") {
         throw new Error("No existe un runtime disponible para cambiar de escena.");
       }
-      handlers.changeScene(action.sceneId);
+      handlers.changeScene(action.sceneId, action.entryId);
       return;
     }
     throw new Error(`Tipo de acción no soportado: ${action.type}.`);
   });
+}
+
+function createSceneChange(value, path) {
+  if (typeof value === "string") {
+    return { sceneId: requiredText(value, path), entryId: null };
+  }
+  const definition = requiredObject(value, path);
+  const unknown = Object.keys(definition).filter(
+    (property) => !["scene", "entry"].includes(property),
+  );
+  if (unknown.length > 0) {
+    throw new Error(`${path} contiene propiedades desconocidas: ${unknown.join(", ")}.`);
+  }
+  return {
+    sceneId: requiredText(definition.scene, `${path}.scene`),
+    entryId: definition.entry === undefined
+      ? null
+      : requiredText(definition.entry, `${path}.entry`),
+  };
 }
 
 function validateSceneChanges(actions, path) {

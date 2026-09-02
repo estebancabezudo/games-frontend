@@ -5,6 +5,7 @@ export function createGameModel(document, gameState, items = []) {
   const gameId = requiredText(document?.game?.id, "game.id");
   const definitions = normalizeSceneDefinitions(document);
   const scenes = createScenes(definitions, gameId, gameState, items);
+  validateSceneEntryReferences(scenes);
   const initialSceneId = definitions.legacy
     ? legacyInitialSceneId(document, scenes[0].sceneId)
     : requiredText(document?.game?.initial_scene, "game.initial_scene");
@@ -23,6 +24,27 @@ export function createGameModel(document, gameState, items = []) {
     },
     scenes,
   };
+}
+
+function validateSceneEntryReferences(scenes) {
+  const entriesByScene = new Map(scenes.map((scene) => [
+    scene.sceneId,
+    new Set(scene.entries.map((entry) => entry.id)),
+  ]));
+  scenes.forEach((scene) => {
+    const actionGroups = [
+      ...scene.hotspots.map((hotspot) => hotspot.effects),
+      ...(scene.walk?.nodes ?? []).map((node) => node.onArrival?.actions ?? []),
+    ];
+    actionGroups.flat().forEach((action) => {
+      if (action.type !== "change_scene" || action.entryId === null) return;
+      if (!entriesByScene.get(action.sceneId)?.has(action.entryId)) {
+        throw new Error(
+          `La escena ${scene.sceneId} refiere a una entrada inexistente en ${action.sceneId}: ${action.entryId}.`,
+        );
+      }
+    });
+  });
 }
 
 export function initialSceneModel(gameModel) {

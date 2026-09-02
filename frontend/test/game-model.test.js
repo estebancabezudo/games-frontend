@@ -332,11 +332,37 @@ test("allows change_scene from hotspots and final walk-node arrival", () => {
   });
   const game = model(documentWithScenes([yard, scene("house")]));
   assert.deepEqual(game.scenes[0].hotspots[0].effects, [
-    { type: "change_scene", sceneId: "house" },
+    { type: "change_scene", sceneId: "house", entryId: null },
   ]);
   assert.deepEqual(game.scenes[0].walk.nodes[1].onArrival.actions, [
-    { type: "change_scene", sceneId: "house" },
+    { type: "change_scene", sceneId: "house", entryId: null },
   ]);
+});
+
+test("validates change_scene entries against the destination scene", () => {
+  const yard = scene("yard", {
+    controlled_actor: "player",
+    actors: [actor("player")],
+    entries: [{ id: "shared", position: { x: 100, y: 100 } }],
+    hotspots: [{
+      id: "door", area: { x: 0, y: 0, width: 10, height: 10 },
+      effects: [{ change_scene: { scene: "house", entry: "shared" } }],
+    }],
+  });
+  const house = scene("house", {
+    controlled_actor: "player",
+    actors: [actor("player")],
+    entries: [{ id: "from_yard", position: { x: 200, y: 300 } }],
+  });
+  assert.throws(
+    () => model(documentWithScenes([yard, house])),
+    /entrada inexistente en house: shared/,
+  );
+  yard.hotspots[0].effects[0].change_scene.entry = "from_yard";
+  const game = model(documentWithScenes([yard, house]));
+  assert.deepEqual(game.scenes[0].hotspots[0].effects[0], {
+    type: "change_scene", sceneId: "house", entryId: "from_yard",
+  });
 });
 
 test("rejects change_scene from actor interactions", () => {

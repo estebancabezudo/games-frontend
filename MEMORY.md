@@ -156,6 +156,8 @@ YAML → GameModel/SceneModel → estado y runtimes → coordinación → render
 - `change_scene` se permite únicamente en `hotspot.effects` y
   `walk.nodes[].on_arrival.effects`; debe aparecer una sola vez y como última acción.
   Está prohibido en actores, scene objects y demás contextos.
+- `change_scene` acepta el ID de escena legado o `{ scene, entry }`. La entrada se
+  valida dentro de la escena destino y se delega al runtime junto con el ID de escena.
 - Flags declaradas con booleanos son mutables. Flags calculadas admiten exactamente
   `previous_flag and previous_flag` o `previous_flag or previous_flag`, sólo con
   referencias previamente declaradas; pueden encadenarse y son de sólo lectura.
@@ -224,6 +226,11 @@ YAML → GameModel/SceneModel → estado y runtimes → coordinación → render
   misma partida cargada. Route, destination, facing, motion, animación, override visual,
   patrol y demás runtimes se recrean; recargar el YAML o la página borra los snapshots
   y vuelve a las posiciones declaradas.
+- Cada escena puede declarar `entries[]` con ID, posición y facing opcional compatible
+  con su actor controlado. Al activar: se reconstruye runtime, se restaura el snapshot,
+  una entrada explícita reemplaza posición/facing del controlado, y después se preparan
+  patrols, cámara y render. Sin entrada rige snapshot y, en primera visita, posición YAML.
+  Las entradas no afectan actores secundarios ni crean rutas o destinos.
 
 ## Scene objects y Objetos cercanos
 
@@ -277,18 +284,19 @@ YAML → GameModel/SceneModel → estado y runtimes → coordinación → render
 
 ## Estado confirmado y operación
 
-Capacidades consolidadas entre TAREAS 48–58: acciones declarativas de objetos,
+Capacidades consolidadas entre TAREAS 48–59: acciones declarativas de objetos,
 empaquetado explícito de fuentes nuevas, condiciones de acciones, composición del
 cajón/moneda/estado vacío, ciclo declarativo de abrir/cerrar, flujo Git permanente,
 comentario explícito de mesa mediante diálogo, facing final declarativo de approaches
-y memoria de posiciones de actores por escena durante la partida cargada.
+y memoria de posiciones de actores por escena durante la partida cargada, con puntos
+de entrada declarativos que tienen prioridad en cambios de escena explícitos.
 
-- Última suite: 431 pruebas aprobadas.
-- Último build: Vite, 128 módulos transformados.
-- Commit confirmado de TAREA 56:
-  `d3c04a6bed596621a82b1245a664ff2b8bdde8fb`.
-- ZIP confirmado: `scripts/games-sources-review-20260901-164238.zip`, 172 archivos,
-  SHA-256 `56acd39b32b70b87db2c54865f387044818317aaf5d85055771d1dd8d13eb23e`.
+- Última suite: 444 pruebas aprobadas.
+- Último build: Vite, 130 módulos transformados.
+- Base aprobada de TAREA 58:
+  `3f4866a1200338fecad5b64230de545efe75533e`.
+- ZIP base confirmado: `scripts/games-sources-review-20260902-162430.zip`, 174 archivos,
+  SHA-256 `2ddd6b07f51dded3b669d2fa6f7e6c4e407d0003ce82035e37a4b4d2cc20a90d`.
 - Comandos: `cd frontend && npm test`, `cd frontend && npm run build`,
   `scripts/test-package-games-sources.sh`, `git diff --check`.
 

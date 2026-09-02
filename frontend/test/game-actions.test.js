@@ -144,12 +144,34 @@ test("creates and delegates a valid change_scene", () => {
   );
   const gameState = state();
   applyGameActions(gameState, actions, {
-    changeScene(sceneId) {
-      observed.push({ sceneId, flag: gameState.flags.dog_met });
+    changeScene(sceneId, entryId) {
+      observed.push({ sceneId, entryId, flag: gameState.flags.dog_met });
     },
   });
-  assert.deepEqual(actions.at(-1), { type: "change_scene", sceneId: "house" });
-  assert.deepEqual(observed, [{ sceneId: "house", flag: true }]);
+  assert.deepEqual(actions.at(-1), {
+    type: "change_scene", sceneId: "house", entryId: null,
+  });
+  assert.deepEqual(observed, [{ sceneId: "house", entryId: null, flag: true }]);
+});
+
+test("normalizes and delegates a change_scene entry", () => {
+  const options = {
+    allowChangeScene: true,
+    sceneIds: new Set(["yard", "house"]),
+    sceneEntryIds: new Map([["house", new Set(["from_yard"])]]),
+  };
+  const actions = createGameActions(
+    [{ change_scene: { scene: " house ", entry: " from_yard " } }],
+    state(), dialogues, "effects", items, options,
+  );
+  const calls = [];
+  applyGameActions(state(), actions, {
+    changeScene: (sceneId, entryId) => calls.push({ sceneId, entryId }),
+  });
+  assert.deepEqual(actions, [{
+    type: "change_scene", sceneId: "house", entryId: "from_yard",
+  }]);
+  assert.deepEqual(calls, [{ sceneId: "house", entryId: "from_yard" }]);
 });
 
 test("change_scene validates context, target, order, and uniqueness", () => {
@@ -157,6 +179,13 @@ test("change_scene validates context, target, order, and uniqueness", () => {
   assert.throws(
     () => createGameActions(
       [{ change_scene: "house" }], state(), dialogues, "effects", items,
+    ),
+    /change_scene no está permitido en este contexto/,
+  );
+  assert.throws(
+    () => createGameActions(
+      [{ change_scene: { scene: "house", entry: "from_yard" } }],
+      state(), dialogues, "effects", items,
     ),
     /change_scene no está permitido en este contexto/,
   );
@@ -179,5 +208,26 @@ test("change_scene validates context, target, order, and uniqueness", () => {
       state(), dialogues, "effects", items, options,
     ),
     /más de un change_scene/,
+  );
+  assert.throws(
+    () => createGameActions(
+      [{ change_scene: {} }], state(), dialogues, "effects", items, options,
+    ),
+    /change_scene\.scene debe ser texto no vacío/,
+  );
+  assert.throws(
+    () => createGameActions(
+      [{ change_scene: { scene: "house", extra: "x" } }],
+      state(), dialogues, "effects", items, options,
+    ),
+    /propiedades desconocidas: extra/,
+  );
+  assert.throws(
+    () => createGameActions(
+      [{ change_scene: { scene: "house", entry: "missing" } }],
+      state(), dialogues, "effects", items,
+      { ...options, sceneEntryIds: new Map([["house", new Set()]]) },
+    ),
+    /entrada inexistente en house: missing/,
   );
 });

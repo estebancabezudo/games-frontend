@@ -72,6 +72,13 @@ scenes:
 
     controlled_actor: player
 
+    entries:
+      - id: from_house
+        position:
+          x: 1500
+          y: 900
+        facing: down
+
     actors:
       - id: player
         visual:
@@ -528,7 +535,9 @@ scenes:
           y: 800
           facing: up
         effects:
-          - change_scene: house
+          - change_scene:
+              scene: house
+              entry: from_yard
 
     objects:
       - id: brass_key
@@ -616,6 +625,12 @@ scenes:
     background:
       color: "#cccccc"
     controlled_actor: player
+    entries:
+      - id: from_yard
+        position:
+          x: 400
+          y: 800
+        facing: default
     actors:
       - id: player
         asset: "assets/player.svg"
@@ -654,7 +669,9 @@ scenes:
           x: 300
           y: 800
         effects:
-          - change_scene: yard</textarea>
+          - change_scene:
+              scene: yard
+              entry: from_house</textarea>
         </section>
         <section class="preview-pane" aria-labelledby="result-title">
           <h2 id="result-title">Result</h2>

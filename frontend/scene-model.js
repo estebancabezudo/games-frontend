@@ -13,6 +13,7 @@ import { createWalkModel } from "./walk-model.js";
 import { createUseInteraction } from "./interaction-model.js";
 import { createSceneObjects } from "./scene-object-model.js";
 import { actorFacingIsSupported } from "./actor-facing.js";
+import { createSceneEntries } from "./scene-entry-model.js";
 
 const SUPPORTED_ORIENTATIONS = new Set(["portrait", "landscape"]);
 
@@ -46,6 +47,7 @@ export function createSceneModel(definition, gameState, items = [], context = {}
     actors: actorModel.actors,
     controlledActorId: actorModel.controlledActorId,
     character: actorModel.controlledActor,
+    entries: createSceneEntries(scene?.entries, actorModel.controlledActor),
     dialogues,
     items,
     walk: createWalkModel(scene?.walk, gameState, dialogues, items, context.sceneIds),
