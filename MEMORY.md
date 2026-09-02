@@ -219,8 +219,11 @@ YAML → GameModel/SceneModel → estado y runtimes → coordinación → render
 - Al salir se detienen loops y rutas, se limpian pendientes, contexto de objetos,
   diálogo/timer/sesión, actores, animaciones, cámara y DOM. No quedan RAF o patrols de
   la escena anterior.
-- Flags e inventario sobreviven. Posiciones y runtimes de actores todavía no persisten:
-  al volver, se recrean desde las coordenadas YAML de esa escena.
+- Flags e inventario sobreviven. Las posiciones `x/y` de todos los actores se guardan
+  por escena al salir y se restauran antes de preparar patrols al volver durante la
+  misma partida cargada. Route, destination, facing, motion, animación, override visual,
+  patrol y demás runtimes se recrean; recargar el YAML o la página borra los snapshots
+  y vuelve a las posiciones declaradas.
 
 ## Scene objects y Objetos cercanos
 
@@ -274,13 +277,14 @@ YAML → GameModel/SceneModel → estado y runtimes → coordinación → render
 
 ## Estado confirmado y operación
 
-Capacidades consolidadas entre TAREAS 48–57: acciones declarativas de objetos,
+Capacidades consolidadas entre TAREAS 48–58: acciones declarativas de objetos,
 empaquetado explícito de fuentes nuevas, condiciones de acciones, composición del
 cajón/moneda/estado vacío, ciclo declarativo de abrir/cerrar, flujo Git permanente,
-comentario explícito de mesa mediante diálogo y facing final declarativo de approaches.
+comentario explícito de mesa mediante diálogo, facing final declarativo de approaches
+y memoria de posiciones de actores por escena durante la partida cargada.
 
-- Última suite: 424 pruebas aprobadas.
-- Último build: Vite, 127 módulos transformados.
+- Última suite: 431 pruebas aprobadas.
+- Último build: Vite, 128 módulos transformados.
 - Commit confirmado de TAREA 56:
   `d3c04a6bed596621a82b1245a664ff2b8bdde8fb`.
 - ZIP confirmado: `scripts/games-sources-review-20260901-164238.zip`, 172 archivos,
@@ -292,7 +296,6 @@ comentario explícito de mesa mediante diálogo y facing final declarativo de ap
 
 - `collision` todavía no existe; cuando se necesite debe representar contacto físico
   real, no renombrar ni reintroducir la antigua distancia social `proximity`.
-- No existe persistencia de posición ni runtime por escena; volver a una escena recrea
-  sus actores desde YAML.
+- No existe persistencia entre partidas/sesiones ni serialización de runtimes de escena.
 
 No hay una siguiente funcionalidad decidida en esta memoria.

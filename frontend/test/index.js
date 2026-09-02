@@ -37,6 +37,7 @@ import "./scene-object-model.test.js";
 import "./scene-object-actions.test.js";
 import "./scene-object-runtime.test.js";
 import "./scene-runtime.test.js";
+import "./scene-position-state.test.js";
 import "./scene-coordinates.test.js";
 import "./scene-input.test.js";
 import "./walk-model.test.js";

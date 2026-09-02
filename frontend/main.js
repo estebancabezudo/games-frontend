@@ -67,6 +67,12 @@ import {
   createSceneRuntimeResources,
   disposeSceneRuntimeResources,
 } from "./scene-runtime.js";
+import {
+  clearScenePositionState,
+  createScenePositionState,
+  restoreSceneActorPositions,
+  saveSceneActorPositions,
+} from "./scene-position-state.js";
 import { parseYaml } from "./yaml-parser.js";
 import { calculateWalkNavigation } from "./walk-navigation.js";
 import {
@@ -107,6 +113,7 @@ let walkArrivalRuntime = createWalkArrivalRuntime();
 let dialogueRuntime = createDialogueRuntime();
 let dialogueSession = createDialogueSessionRuntime();
 let dialogueTalkingRuntime = createDialogueTalkingRuntime();
+const scenePositionState = createScenePositionState();
 let sceneDeactivating = false;
 const sceneRenderer = createSceneRenderer(
   preview,
@@ -152,6 +159,7 @@ function parseEditorContent() {
 
 function loadGame(gameModel, gameState) {
   deactivateCurrentScene();
+  clearScenePositionState(scenePositionState);
   currentGameModel = gameModel;
   currentGameState = gameState;
   activateScene(initialSceneModel(gameModel).sceneId);
@@ -168,6 +176,11 @@ function activateScene(sceneId) {
   currentSceneModel = sceneModel;
   currentUseInteraction = sceneModel.useInteraction;
   const resources = createSceneRuntimeResources(sceneModel);
+  restoreSceneActorPositions(
+    scenePositionState,
+    sceneModel.sceneId,
+    resources.actorsRuntime,
+  );
   selectedInventoryItem = resources.selectedInventoryItem;
   interactionRuntime = resources.interactionRuntime;
   sceneObjectRuntime = resources.sceneObjectRuntime;
@@ -206,6 +219,13 @@ function activateScene(sceneId) {
 
 function deactivateCurrentScene() {
   sceneDeactivating = true;
+  if (currentSceneModel !== null) {
+    saveSceneActorPositions(
+      scenePositionState,
+      currentSceneModel.sceneId,
+      currentActorsRuntime,
+    );
+  }
   disposeSceneRuntimeResources({
     actorsRuntime: currentActorsRuntime,
     actorMovements: currentActorMovements,
@@ -235,6 +255,7 @@ function deactivateCurrentScene() {
 
 function showError(prefix, error) {
   deactivateCurrentScene();
+  clearScenePositionState(scenePositionState);
   currentGameModel = null;
   currentGameState = null;
   renderDialogue();
