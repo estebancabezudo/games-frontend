@@ -184,6 +184,7 @@ test("opening switches the asset, removes Open, and reveals the coin in the same
 
   assert.equal(resolveSceneElementVariant(drawerElement, gameState).asset, "assets/drawer-open.svg");
   assert.equal(sceneObjectActionIsAvailable(openAction, gameState), false);
+  assert.equal(sceneObjectActionIsAvailable(drawerObject.actions[1], gameState), true);
   assert.equal(hotspotIsEnabled(coinHotspot, gameState), true);
   assert.equal(sceneObjectIsAvailable(coinObject, sceneModel, gameState), true);
 
@@ -208,7 +209,70 @@ test("opening switches the asset, removes Open, and reveals the coin in the same
   render();
   render();
   assert.deepEqual(fixture.objectButtons.map((button) => button.textContent), ["Cajón", "Moneda"]);
-  assert.equal(fixture.actionButtons.length, 0);
+  assert.deepEqual(fixture.actionButtons.map((button) => button.textContent), ["Cerrar"]);
+});
+
+test("closing and reopening preserves the drawer context and restores the same coin", () => {
+  const { document, sceneModel, gameState, yaml } = loadExample();
+  const runtime = objectRuntime();
+  const drawer = findById(sceneModel.objects, "table_drawer");
+  const coin = findById(sceneModel.objects, "drawer_coin");
+  const drawerElement = findById(sceneModel.elements, "table_drawer");
+  const documentBefore = structuredClone(document);
+  const modelBefore = structuredClone(sceneModel);
+  const open = drawer.actions.find((action) => action.id === "open");
+  const close = drawer.actions.find((action) => action.id === "close");
+  const nearbyIds = () => availableSceneObjects(sceneModel, gameState, runtime)
+    .map((object) => object.id);
+  const actionIds = () => drawer.actions
+    .filter((action) => sceneObjectActionIsAvailable(action, gameState))
+    .map((action) => action.id);
+
+  assert.deepEqual(close, {
+    id: "close",
+    label: "Cerrar",
+    enabledWhen: { flag: "drawer_open", value: true },
+    effects: [{ type: "clear_flag", flag: "drawer_open" }],
+  });
+  assert.deepEqual(actionIds(), ["open"]);
+  assert.deepEqual(nearbyIds(), ["table_drawer"]);
+
+  applyGameActions(gameState, open.effects);
+  reconcileSceneObjectContext(runtime, availableSceneObjects(sceneModel, gameState, runtime));
+  assert.equal(gameState.flags.drawer_open, true);
+  assert.equal(gameState.flags.drawer_contents_visible, true);
+  assert.equal(resolveSceneElementVariant(drawerElement, gameState).asset, "assets/drawer-open.svg");
+  assert.deepEqual(actionIds(), ["close"]);
+  assert.deepEqual(nearbyIds(), ["table_drawer", "drawer_coin"]);
+  assert.deepEqual(runtime, objectRuntime());
+
+  const flagsBeforeClose = { ...gameState.flags };
+  applyGameActions(gameState, close.effects);
+  reconcileSceneObjectContext(runtime, availableSceneObjects(sceneModel, gameState, runtime));
+  assert.equal(gameState.flags.drawer_open, false);
+  assert.equal(gameState.flags.coin_in_drawer, true);
+  assert.equal(gameState.flags.drawer_contents_visible, false);
+  Object.keys(flagsBeforeClose)
+    .filter((flag) => flag !== "drawer_open" && flag !== "drawer_contents_visible")
+    .forEach((flag) => assert.equal(gameState.flags[flag], flagsBeforeClose[flag], flag));
+  assert.equal(resolveSceneElementVariant(drawerElement, gameState).asset, "assets/drawer-closed.svg");
+  assert.equal(sceneObjectIsAvailable(coin, sceneModel, gameState), false);
+  assert.deepEqual(actionIds(), ["open"]);
+  assert.deepEqual(nearbyIds(), ["table_drawer"]);
+  assert.deepEqual(runtime, objectRuntime());
+
+  applyGameActions(gameState, open.effects);
+  reconcileSceneObjectContext(runtime, availableSceneObjects(sceneModel, gameState, runtime));
+  assert.deepEqual(actionIds(), ["close"]);
+  assert.deepEqual(nearbyIds(), ["table_drawer", "drawer_coin"]);
+  assert.equal(nearbyIds().filter((id) => id === "drawer_coin").length, 1);
+  assert.deepEqual(runtime, objectRuntime());
+  assert.deepEqual(document, documentBefore);
+  assert.deepEqual(sceneModel, modelBefore);
+  assert.equal(
+    readFileSync(new URL("../index.html", import.meta.url), "utf8").includes(yaml),
+    true,
+  );
 });
 
 test("drawer SVG assets exist, are self-contained, and declare viewBox", () => {
@@ -397,7 +461,7 @@ test("the example normalizes the empty drawer dialogue and conditional look acti
     actorId: "player",
     text: "El cajón está vacío.",
   }]);
-  assert.deepEqual(drawer.actions[1], {
+  assert.deepEqual(drawer.actions[2], {
     id: "look_empty",
     label: "Mirar",
     enabledWhen: { flag: "coin_in_drawer", value: false },
@@ -405,7 +469,7 @@ test("the example normalizes the empty drawer dialogue and conditional look acti
   });
 });
 
-test("drawer actions transition from Open to none to empty Look without premature effects", () => {
+test("drawer actions transition from Open to Close and then Close plus empty Look", () => {
   const { sceneModel, gameState } = loadExample();
   const drawer = findById(sceneModel.objects, "table_drawer");
   const runtime = objectRuntime();
@@ -430,9 +494,9 @@ test("drawer actions transition from Open to none to empty Look without prematur
   assert.deepEqual(gameState.inventory, inventoryBefore);
 
   gameState.flags.drawer_open = true;
-  assert.deepEqual(availableActionIds(), []);
+  assert.deepEqual(availableActionIds(), ["close"]);
   gameState.flags.coin_in_drawer = false;
-  assert.deepEqual(availableActionIds(), ["look_empty"]);
+  assert.deepEqual(availableActionIds(), ["close", "look_empty"]);
 });
 
 test("empty drawer Look is explicit, disabled during dialogue, and survives leaving and returning", () => {
@@ -477,7 +541,7 @@ test("empty drawer Look is explicit, disabled during dialogue, and survives leav
   );
   render();
   render();
-  assert.deepEqual(fixture.actionButtons.map((button) => button.textContent), ["Mirar"]);
+  assert.deepEqual(fixture.actionButtons.map((button) => button.textContent), ["Cerrar", "Mirar"]);
 
   const look = resolveSelectedSceneObjectAction(
     sceneModel,
@@ -493,7 +557,7 @@ test("empty drawer Look is explicit, disabled during dialogue, and survives leav
   });
   assert.equal(dialogueIsActive(dialogueRuntime), true);
   render(true);
-  assert.deepEqual(fixture.actionButtons.map((button) => button.disabled), [true]);
+  assert.deepEqual(fixture.actionButtons.map((button) => button.disabled), [true, true]);
   assert.deepEqual({ ...gameState.flags }, flagsBeforeLook);
   assert.deepEqual(gameState.inventory, inventoryBeforeLook);
 
@@ -518,8 +582,99 @@ test("empty drawer Look is explicit, disabled during dialogue, and survives leav
     drawer.actions
       .filter((action) => sceneObjectActionIsAvailable(action, gameState))
       .map((action) => action.id),
-    ["look_empty"],
+    ["close", "look_empty"],
   );
+  assert.deepEqual(document, documentBefore);
+  assert.deepEqual(sceneModel, modelBefore);
+  assert.equal(
+    readFileSync(new URL("../index.html", import.meta.url), "utf8").includes(yaml),
+    true,
+  );
+});
+
+test("a taken coin never returns across repeated close and reopen cycles", () => {
+  const { document, sceneModel, gameState, yaml } = loadExample();
+  const runtime = objectRuntime("drawer_coin");
+  const drawer = findById(sceneModel.objects, "table_drawer");
+  const coin = findById(sceneModel.objects, "drawer_coin");
+  const documentBefore = structuredClone(document);
+  const modelBefore = structuredClone(sceneModel);
+  const open = drawer.actions.find((action) => action.id === "open");
+  const close = drawer.actions.find((action) => action.id === "close");
+
+  applyGameActions(gameState, open.effects);
+  const take = resolveSelectedSceneObjectAction(
+    sceneModel,
+    gameState,
+    runtime,
+    coin.id,
+    "take",
+  ).action;
+  applyGameActions(gameState, take.effects);
+  reconcileSceneObjectContext(runtime, availableSceneObjects(sceneModel, gameState, runtime));
+  assert.deepEqual(gameState.inventory, ["dog_food", "coin"]);
+  assert.equal(gameState.flags.coin_in_drawer, false);
+  assert.deepEqual(runtime, {
+    pendingObjectId: null,
+    activeLocationId: "table_drawer",
+    selectedObjectId: null,
+  });
+
+  selectSceneObject(
+    runtime,
+    drawer.id,
+    availableSceneObjects(sceneModel, gameState, runtime),
+  );
+  for (let cycle = 0; cycle < 3; cycle += 1) {
+    applyGameActions(gameState, close.effects);
+    reconcileSceneObjectContext(runtime, availableSceneObjects(sceneModel, gameState, runtime));
+    assert.equal(gameState.flags.drawer_open, false);
+    assert.deepEqual(
+      drawer.actions
+        .filter((action) => sceneObjectActionIsAvailable(action, gameState))
+        .map((action) => action.id),
+      ["open", "look_empty"],
+    );
+    assert.deepEqual(
+      availableSceneObjects(sceneModel, gameState, runtime).map((object) => object.id),
+      ["table_drawer"],
+    );
+    assert.deepEqual(runtime, objectRuntime());
+
+    applyGameActions(gameState, open.effects);
+    reconcileSceneObjectContext(runtime, availableSceneObjects(sceneModel, gameState, runtime));
+    assert.equal(gameState.flags.drawer_open, true);
+    assert.equal(gameState.flags.coin_in_drawer, false);
+    assert.equal(gameState.flags.drawer_contents_visible, false);
+    assert.deepEqual(
+      drawer.actions
+        .filter((action) => sceneObjectActionIsAvailable(action, gameState))
+        .map((action) => action.id),
+      ["close", "look_empty"],
+    );
+    assert.deepEqual(
+      availableSceneObjects(sceneModel, gameState, runtime).map((object) => object.id),
+      ["table_drawer"],
+    );
+    assert.deepEqual(gameState.inventory, ["dog_food", "coin"]);
+    assert.deepEqual(runtime, objectRuntime());
+  }
+
+  const fixture = viewFixture();
+  renderNearbyObjects(
+    fixture.panel,
+    fixture.objectContainer,
+    availableSceneObjects(sceneModel, gameState, runtime),
+    runtime.selectedObjectId,
+    () => {},
+    {
+      actionsContainer: fixture.actionContainer,
+      gameState,
+      onAction() {},
+    },
+  );
+  assert.deepEqual(fixture.objectButtons.map((button) => button.textContent), ["Cajón"]);
+  assert.deepEqual(fixture.actionButtons.map((button) => button.textContent), ["Cerrar", "Mirar"]);
   assert.deepEqual(document, documentBefore);
   assert.deepEqual(sceneModel, modelBefore);
   assert.equal(

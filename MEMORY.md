@@ -260,8 +260,10 @@ YAML → GameModel/SceneModel → estado y runtimes → coordinación → render
   alimentado y diálogos warning/friendly. Waiter inicia diálogo sólo por click explícito.
 - Llave de latón: scene object con `Mirar` y `Tomar`; tomar agrega el item y la oculta
   mediante `brass_key_taken`.
-- Cajón: `Abrir` cambia `drawer_open`; moneda y hotspot aparecen con
-  `drawer_contents_visible = drawer_open and coin_in_drawer` en la misma location.
+- Cajón: `Abrir`/`Cerrar` cambian `drawer_open` mediante acciones condicionadas; moneda
+  y hotspot aparecen con `drawer_contents_visible = drawer_open and coin_in_drawer` en
+  la misma location. Al reabrir, la moneda reaparece sólo si continúa dentro; una
+  moneda ya tomada no se recrea.
   Moneda permite `Mirar` y `Tomar`; tomar agrega `coin` y limpia `coin_in_drawer`.
   Después, seleccionar Cajón ofrece `Mirar` y muestra “El cajón está vacío.”
 - Mesa: scene object separado en location `table_surface`; tras approach ofrece sólo
@@ -272,12 +274,12 @@ YAML → GameModel/SceneModel → estado y runtimes → coordinación → render
 
 ## Estado confirmado y operación
 
-Capacidades consolidadas entre TAREAS 48–56: acciones declarativas de objetos,
+Capacidades consolidadas entre TAREAS 48–57: acciones declarativas de objetos,
 empaquetado explícito de fuentes nuevas, condiciones de acciones, composición del
-cajón/moneda/estado vacío, flujo Git permanente, comentario explícito de mesa mediante
-diálogo y facing final declarativo de approaches.
+cajón/moneda/estado vacío, ciclo declarativo de abrir/cerrar, flujo Git permanente,
+comentario explícito de mesa mediante diálogo y facing final declarativo de approaches.
 
-- Última suite: 422 pruebas aprobadas.
+- Última suite: 424 pruebas aprobadas.
 - Último build: Vite, 127 módulos transformados.
 - Commit confirmado de TAREA 56:
   `d3c04a6bed596621a82b1245a664ff2b8bdde8fb`.

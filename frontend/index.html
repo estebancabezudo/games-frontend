@@ -569,6 +569,13 @@ scenes:
               value: false
             effects:
               - set_flag: drawer_open
+          - id: close
+            label: "Cerrar"
+            enabled_when:
+              flag: drawer_open
+              value: true
+            effects:
+              - clear_flag: drawer_open
           - id: look_empty
             label: "Mirar"
             enabled_when:
