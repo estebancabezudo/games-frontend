@@ -174,6 +174,18 @@ YAML → GameModel/SceneModel → estado y runtimes → coordinación → render
   falta. Al retirar el item seleccionado, la selección se limpia. Una interacción
   pendiente con un item retirado falla al llegar.
 
+### Snapshot de progreso
+
+- `game-progress.js` define el contrato JSON-safe versionado `version: 1`: `gameId`,
+  `activeSceneId`, flags mutables, inventario ordenado y posiciones `x/y` por escena.
+- La escena activa siempre aporta las posiciones actuales de sus actores y reemplaza
+  su snapshot previo. No se serializan flags calculadas ni runtimes transitorios.
+- Al restaurar se validan versión, juego, escenas, actores, catálogo, coordenadas y
+  límites de forma atómica. Las flags parten de una copia de `GameModel.initialState`,
+  por lo que getters, dependencias y protección de las calculadas se reconstruyen.
+- El contrato sólo exporta/reconstruye datos en memoria. Todavía no está conectado a
+  la interfaz ni se persiste en navegador, archivos o backend.
+
 ## Elementos e iluminación
 
 - Elementos admiten `id`, posición y tamaño world, `z`, `depth_y`, exactamente uno de
@@ -284,19 +296,21 @@ YAML → GameModel/SceneModel → estado y runtimes → coordinación → render
 
 ## Estado confirmado y operación
 
-Capacidades consolidadas entre TAREAS 48–59: acciones declarativas de objetos,
+Capacidades consolidadas entre TAREAS 48–60: acciones declarativas de objetos,
 empaquetado explícito de fuentes nuevas, condiciones de acciones, composición del
 cajón/moneda/estado vacío, ciclo declarativo de abrir/cerrar, flujo Git permanente,
 comentario explícito de mesa mediante diálogo, facing final declarativo de approaches
 y memoria de posiciones de actores por escena durante la partida cargada, con puntos
 de entrada declarativos que tienen prioridad en cambios de escena explícitos.
+También existe un snapshot serializable y validado del progreso, aún sin almacenamiento
+ni integración con la interfaz.
 
-- Última suite: 444 pruebas aprobadas.
+- Última suite: 458 pruebas aprobadas.
 - Último build: Vite, 130 módulos transformados.
-- Base aprobada de TAREA 58:
-  `3f4866a1200338fecad5b64230de545efe75533e`.
-- ZIP base confirmado: `scripts/games-sources-review-20260902-162430.zip`, 174 archivos,
-  SHA-256 `2ddd6b07f51dded3b669d2fa6f7e6c4e407d0003ce82035e37a4b4d2cc20a90d`.
+- Base aprobada de TAREA 59:
+  `9f0a2c17c183f29943897397ee6018627441849d`.
+- ZIP base confirmado: `scripts/games-sources-review-20260902-175000.zip`, 178 archivos,
+  SHA-256 `bc8b4a363b162a34a7c2ad53e47ffcb08bcef5d6abd653a5108db84efc9063d5`.
 - Comandos: `cd frontend && npm test`, `cd frontend && npm run build`,
   `scripts/test-package-games-sources.sh`, `git diff --check`.
 
@@ -304,6 +318,7 @@ de entrada declarativos que tienen prioridad en cambios de escena explícitos.
 
 - `collision` todavía no existe; cuando se necesite debe representar contacto físico
   real, no renombrar ni reintroducir la antigua distancia social `proximity`.
-- No existe persistencia entre partidas/sesiones ni serialización de runtimes de escena.
+- No existe persistencia automática entre sesiones ni integración del snapshot con UI,
+  almacenamiento local, archivos o backend.
 
 No hay una siguiente funcionalidad decidida en esta memoria.

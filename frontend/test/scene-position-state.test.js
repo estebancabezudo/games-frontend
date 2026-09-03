@@ -4,9 +4,11 @@ import { reconcilePatrolRuntime } from "../actor-patrol.js";
 import { createSceneRuntimeResources, disposeSceneRuntimeResources } from "../scene-runtime.js";
 import {
   clearScenePositionState,
+  copyScenePositionSnapshots,
   createScenePositionState,
   restoreSceneActorPositions,
   saveSceneActorPositions,
+  setScenePositionSnapshot,
 } from "../scene-position-state.js";
 import { createWalkModel } from "../walk-model.js";
 
@@ -212,4 +214,16 @@ test("position persistence does not mutate scene declarations or global state", 
   assert.deepEqual(model, modelBefore);
   assert.deepEqual(gameState, gameStateBefore);
   assert.deepEqual(recreated.actorsRuntime.player.position, { x: 400, y: 750 });
+});
+
+test("position snapshots can be copied and loaded without sharing references", () => {
+  const state = createScenePositionState();
+  const source = { player: { x: 300, y: 700 } };
+  setScenePositionSnapshot(state, "yard", source);
+  source.player.x = 999;
+
+  const copy = copyScenePositionSnapshots(state);
+  assert.deepEqual(copy.get("yard").get("player"), { x: 300, y: 700 });
+  copy.get("yard").get("player").x = 1;
+  assert.deepEqual(state.positionsByScene.get("yard").get("player"), { x: 300, y: 700 });
 });

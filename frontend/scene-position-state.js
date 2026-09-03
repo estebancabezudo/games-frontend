@@ -34,3 +34,23 @@ export function restoreSceneActorPositions(positionState, sceneId, actorsRuntime
 export function clearScenePositionState(positionState) {
   positionState.positionsByScene.clear();
 }
+
+export function copyScenePositionSnapshots(positionState) {
+  return new Map([...positionState.positionsByScene].map(([sceneId, positions]) => [
+    sceneId,
+    new Map([...positions].map(([actorId, position]) => [
+      actorId,
+      { x: position.x, y: position.y },
+    ])),
+  ]));
+}
+
+export function setScenePositionSnapshot(positionState, sceneId, positions) {
+  positionState.positionsByScene.set(
+    sceneId,
+    new Map(Object.entries(positions).map(([actorId, position]) => [
+      actorId,
+      { x: position.x, y: position.y },
+    ])),
+  );
+}

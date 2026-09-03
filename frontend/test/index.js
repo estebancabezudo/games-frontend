@@ -22,6 +22,7 @@ import "./flag-effects.test.js";
 import "./computed-flags.test.js";
 import "./game-state.test.js";
 import "./game-model.test.js";
+import "./game-progress.test.js";
 import "./item-model.test.js";
 import "./inventory-runtime.test.js";
 import "./inventory-view.test.js";
