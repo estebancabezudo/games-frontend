@@ -183,8 +183,12 @@ YAML → GameModel/SceneModel → estado y runtimes → coordinación → render
 - Al restaurar se validan versión, juego, escenas, actores, catálogo, coordenadas y
   límites de forma atómica. Las flags parten de una copia de `GameModel.initialState`,
   por lo que getters, dependencias y protección de las calculadas se reconstruyen.
-- El contrato sólo exporta/reconstruye datos en memoria. Todavía no está conectado a
-  la interfaz ni se persiste en navegador, archivos o backend.
+- `game-progress-storage.js` adapta ese contrato a un `Storage` inyectado. Usa una clave
+  versionada y aislada por juego, valida antes de guardar, restaura mediante el contrato
+  común y propaga fallos de lectura, JSON, validación, escritura o eliminación sin
+  sobrescribir ni borrar datos silenciosamente.
+- La persistencia local todavía no está conectada a la interfaz ni se ejecuta de forma
+  automática. No existe persistencia en archivos o backend.
 
 ## Elementos e iluminación
 
@@ -296,21 +300,21 @@ YAML → GameModel/SceneModel → estado y runtimes → coordinación → render
 
 ## Estado confirmado y operación
 
-Capacidades consolidadas entre TAREAS 48–60: acciones declarativas de objetos,
+Capacidades consolidadas entre TAREAS 48–61: acciones declarativas de objetos,
 empaquetado explícito de fuentes nuevas, condiciones de acciones, composición del
 cajón/moneda/estado vacío, ciclo declarativo de abrir/cerrar, flujo Git permanente,
 comentario explícito de mesa mediante diálogo, facing final declarativo de approaches
 y memoria de posiciones de actores por escena durante la partida cargada, con puntos
 de entrada declarativos que tienen prioridad en cambios de escena explícitos.
-También existe un snapshot serializable y validado del progreso, aún sin almacenamiento
-ni integración con la interfaz.
+También existe un snapshot serializable y validado del progreso y un adaptador aislado
+para almacenarlo localmente, aún sin integración con la interfaz.
 
-- Última suite: 458 pruebas aprobadas.
+- Última suite: 472 pruebas aprobadas.
 - Último build: Vite, 130 módulos transformados.
-- Base aprobada de TAREA 59:
-  `9f0a2c17c183f29943897397ee6018627441849d`.
-- ZIP base confirmado: `scripts/games-sources-review-20260902-175000.zip`, 178 archivos,
-  SHA-256 `bc8b4a363b162a34a7c2ad53e47ffcb08bcef5d6abd653a5108db84efc9063d5`.
+- Base aprobada de TAREA 60:
+  `3c75547f2c030b764f21885a79544e6391dda8f3`.
+- ZIP base confirmado: `scripts/games-sources-review-20260903-112500.zip`, 180 archivos,
+  SHA-256 `078339438051ba15d6cc17088b77448a486764d41168e4da1298962a7143f3f2`.
 - Comandos: `cd frontend && npm test`, `cd frontend && npm run build`,
   `scripts/test-package-games-sources.sh`, `git diff --check`.
 
@@ -319,6 +323,6 @@ ni integración con la interfaz.
 - `collision` todavía no existe; cuando se necesite debe representar contacto físico
   real, no renombrar ni reintroducir la antigua distancia social `proximity`.
 - No existe persistencia automática entre sesiones ni integración del snapshot con UI,
-  almacenamiento local, archivos o backend.
+  archivos o backend; el adaptador local requiere invocación explícita.
 
 No hay una siguiente funcionalidad decidida en esta memoria.
