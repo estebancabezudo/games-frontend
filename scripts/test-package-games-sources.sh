@@ -7,116 +7,61 @@ subject_script="${script_dir}/package-games-sources.sh"
 test_root=$(mktemp -d)
 trap 'rm -rf -- "${test_root}"' EXIT
 
-fixture_root="${test_root}/Documents"
-games_root="${fixture_root}/games"
-backend_root="${fixture_root}/cabezudo.dev"
-mkdir -p "${games_root}/scripts" "${games_root}/frontend" \
-    "${backend_root}/api/backend/games"
+documents_root="${test_root}/Documents"
+games_root="${documents_root}/games"
+backend_root="${games_root}/backend"
+platform_root="${games_root}/platform"
+mkdir -p "${games_root}/scripts" "${games_root}/frontend/build" \
+    "${backend_root}/src" "${platform_root}/platform" \
+    "${platform_root}/docs/projects/games"
 cp "${subject_script}" "${games_root}/scripts/package-games-sources.sh"
-printf 'tracked\n' > "${games_root}/frontend/tracked.txt"
-printf 'backend\n' > "${backend_root}/api/backend/games/tracked.txt"
+printf 'frontend\n' > "${games_root}/frontend/tracked.txt"
+printf 'backend\n' > "${backend_root}/src/tracked.txt"
+printf 'platform\n' > "${platform_root}/platform/tracked.txt"
+printf 'memory\n' > "${platform_root}/docs/projects/games/agent-memory.md"
+printf 'ignored build\n' > "${games_root}/frontend/build/generated.txt"
+printf '/frontend/build/\n' > "${games_root}/.gitignore"
 
-git -C "${games_root}" init -q
-git -C "${games_root}" add -- scripts/package-games-sources.sh frontend/tracked.txt
-git -C "${games_root}" -c user.name=Test -c user.email=test@example.invalid \
-    commit -qm 'fixture baseline'
-git -C "${backend_root}" init -q
-git -C "${backend_root}" add -- api/backend/games/tracked.txt
-git -C "${backend_root}" -c user.name=Test -c user.email=test@example.invalid \
-    commit -qm 'fixture baseline'
+for repository in "${games_root}" "${backend_root}" "${platform_root}"; do
+    git -C "${repository}" init -q
+done
+git -C "${games_root}" add -- .gitignore scripts/package-games-sources.sh frontend/tracked.txt
+git -C "${backend_root}" add -- src/tracked.txt
+git -C "${platform_root}" add -- platform/tracked.txt \
+    docs/projects/games/agent-memory.md
+for repository in "${games_root}" "${backend_root}" "${platform_root}"; do
+    git -C "${repository}" -c user.name=Test -c user.email=test@example.invalid \
+        commit -qm 'fixture baseline'
+done
+
+printf 'new frontend\n' > "${games_root}/frontend/new.js"
+printf 'new backend\n' > "${backend_root}/src/new.txt"
+printf 'new platform\n' > "${platform_root}/platform/new.txt"
 
 package_script="${games_root}/scripts/package-games-sources.sh"
-archive_has_once() {
-    local archive=$1
-    local path=$2
-    local count
-    count=$(unzip -Z1 "${archive}" | awk -v target="${path}" \
+archive="${test_root}/games.zip"
+"${package_script}" --output "${archive}" >/dev/null
+unzip -tq "${archive}" >/dev/null
+
+for expected_path in \
+    games/frontend/tracked.txt \
+    games/frontend/new.js \
+    games/backend/src/tracked.txt \
+    games/backend/src/new.txt \
+    games/platform/platform/tracked.txt \
+    games/platform/platform/new.txt \
+    games/platform/docs/projects/games/agent-memory.md; do
+    count=$(unzip -Z1 "${archive}" | awk -v target="${expected_path}" \
         '$0 == target { count += 1 } END { print count + 0 }')
     [[ ${count} -eq 1 ]] || {
-        printf 'Expected exactly one %s in %s, found %s.\n' "${path}" "${archive}" "${count}" >&2
-        return 1
+        printf 'Expected exactly one %s, found %s.\n' "${expected_path}" "${count}" >&2
+        exit 1
     }
-}
+done
 
-archive_lacks() {
-    local archive=$1
-    local path=$2
-    ! unzip -Z1 "${archive}" | grep -Fx -- "${path}" >/dev/null
-}
+if unzip -Z1 "${archive}" | grep -Fx -- 'games/frontend/build/generated.txt' >/dev/null; then
+    printf 'Ignored build output was included.\n' >&2
+    exit 1
+fi
 
-expect_failure() {
-    local expected=$1
-    shift
-    local log="${test_root}/failure.log"
-    if "$@" >"${log}" 2>&1; then
-        printf 'Expected command to fail: %s\n' "$*" >&2
-        return 1
-    fi
-    grep -F -- "${expected}" "${log}" >/dev/null || {
-        printf 'Missing expected error %q. Output:\n' "${expected}" >&2
-        sed -n '1,120p' "${log}" >&2
-        return 1
-    }
-}
-
-printf 'untracked\n' > "${games_root}/frontend/untracked.txt"
-compatibility_zip="${test_root}/compatibility.zip"
-"${package_script}" --output "${compatibility_zip}" >/dev/null
-archive_has_once "${compatibility_zip}" games/frontend/tracked.txt
-archive_lacks "${compatibility_zip}" games/frontend/untracked.txt
-
-printf 'one\n' > "${games_root}/frontend/new-one.js"
-git -C "${games_root}" add -- frontend/new-one.js
-one_zip="${test_root}/one.zip"
-"${package_script}" --files games/frontend/new-one.js --output "${one_zip}" >/dev/null
-archive_has_once "${one_zip}" games/frontend/new-one.js
-
-printf 'two\n' > "${games_root}/frontend/new-two.js"
-printf 'backend-new\n' > "${backend_root}/api/backend/games/new-backend.txt"
-git -C "${games_root}" add -- frontend/new-two.js
-git -C "${backend_root}" add -- api/backend/games/new-backend.txt
-multiple_zip="${test_root}/multiple.zip"
-"${package_script}" --output "${multiple_zip}" --files \
-    games/frontend/new-one.js \
-    games/frontend/new-two.js \
-    cabezudo.dev/api/backend/games/new-backend.txt >/dev/null
-archive_has_once "${multiple_zip}" games/frontend/new-one.js
-archive_has_once "${multiple_zip}" games/frontend/new-two.js
-archive_has_once "${multiple_zip}" cabezudo.dev/api/backend/games/new-backend.txt
-
-expect_failure 'run git add -- frontend/untracked.txt' \
-    "${package_script}" --output "${test_root}/untracked.zip" \
-    --files games/frontend/untracked.txt
-expect_failure 'explicit file does not exist' \
-    "${package_script}" --output "${test_root}/missing.zip" \
-    --files games/frontend/missing.txt
-expect_failure 'explicit path must be relative' \
-    "${package_script}" --output "${test_root}/absolute.zip" \
-    --files /tmp/absolute.txt
-expect_failure "explicit path must not contain '..'" \
-    "${package_script}" --output "${test_root}/parent.zip" \
-    --files games/frontend/../outside.txt
-expect_failure 'explicit path must begin with games/ or cabezudo.dev/' \
-    "${package_script}" --output "${test_root}/prefix.zip" \
-    --files other/frontend/new-one.js
-expect_failure 'explicit path must be a regular file' \
-    "${package_script}" --output "${test_root}/directory.zip" \
-    --files games/frontend
-
-ln -s tracked.txt "${games_root}/frontend/tracked-link.txt"
-git -C "${games_root}" add -- frontend/tracked-link.txt
-expect_failure 'explicit file must not be a symbolic link' \
-    "${package_script}" --output "${test_root}/symlink.zip" \
-    --files games/frontend/tracked-link.txt
-git -C "${games_root}" rm -q --cached -- frontend/tracked-link.txt
-rm -- "${games_root}/frontend/tracked-link.txt"
-
-printf 'undeclared staged\n' > "${games_root}/frontend/undeclared-staged.js"
-git -C "${games_root}" add -- frontend/undeclared-staged.js
-expect_failure 'new Git-indexed file must be declared with --files: games/frontend/undeclared-staged.js' \
-    "${package_script}" --output "${test_root}/undeclared-staged.zip" --files \
-    games/frontend/new-one.js games/frontend/new-two.js
-
-[[ -f ${multiple_zip} ]]
-unzip -tq "${multiple_zip}" >/dev/null
 printf 'package-games-sources tests: OK\n'

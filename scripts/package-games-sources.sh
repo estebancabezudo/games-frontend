@@ -5,7 +5,8 @@ set -euo pipefail
 script_dir=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 product_root=$(CDPATH= cd -- "${script_dir}/.." && pwd)
 documents_root=$(CDPATH= cd -- "${product_root}/.." && pwd)
-backend_root="${documents_root}/cabezudo.dev"
+backend_root="${product_root}/backend"
+platform_root="${product_root}/platform"
 timestamp=$(date +%Y%m%d-%H%M%S)
 output_path="${script_dir}/games-sources-review-${timestamp}.zip"
 declare -a explicit_archive_paths=()
@@ -137,22 +138,30 @@ stage_git_selection() {
     local relative_path
     while IFS= read -r -d '' relative_path; do
         stage_file "${repository}/${relative_path}" "${archive_prefix}/${relative_path}"
-    done < <(git -C "${repository}" ls-files -z --cached -- "$@")
+    done < <(git -C "${repository}" ls-files -z --cached --others --exclude-standard -- "$@")
 }
 
 explicit_source() {
     local archive_path=$1
     case ${archive_path} in
         games/*)
-            explicit_repository=${product_root}
-            explicit_relative_path=${archive_path#games/}
-            ;;
-        cabezudo.dev/*)
-            explicit_repository=${backend_root}
-            explicit_relative_path=${archive_path#cabezudo.dev/}
+            case ${archive_path} in
+                games/backend/*)
+                    explicit_repository=${backend_root}
+                    explicit_relative_path=${archive_path#games/backend/}
+                    ;;
+                games/platform/*)
+                    explicit_repository=${platform_root}
+                    explicit_relative_path=${archive_path#games/platform/}
+                    ;;
+                *)
+                    explicit_repository=${product_root}
+                    explicit_relative_path=${archive_path#games/}
+                    ;;
+            esac
             ;;
         *)
-            fail "explicit path must begin with games/ or cabezudo.dev/: ${archive_path}"
+            fail "explicit path must begin with games/: ${archive_path}"
             ;;
     esac
 }
@@ -195,42 +204,11 @@ for explicit_archive_path in "${explicit_archive_paths[@]}"; do
     explicit_archive_path_set["${explicit_archive_path}"]=1
 done
 
-require_new_files_declared() {
-    local repository=$1
-    local archive_prefix=$2
-    shift 2
-    local relative_path archive_path
-    while IFS= read -r -d '' relative_path; do
-        archive_path="${archive_prefix}/${relative_path}"
-        [[ -n ${explicit_archive_path_set["${archive_path}"]+x} ]] \
-            || fail "new Git-indexed file must be declared with --files: ${archive_path}"
-    done < <(git -C "${repository}" diff --cached --name-only --diff-filter=A -z -- "$@")
-}
-
-require_new_files_declared "${product_root}" 'games' '.'
 stage_git_selection "${product_root}" 'games' '.'
-
-if [[ -d ${backend_root}/api/backend/games || -d ${backend_root}/api/backend/docs/projects/games ]] \
-        && git -C "${backend_root}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    require_new_files_declared "${backend_root}" 'cabezudo.dev' \
-        'AGENTS.md' \
-        'api/backend/AGENTS.md' \
-        'api/backend/pom.xml' \
-        'api/backend/mvnw' \
-        'api/backend/mvnw.cmd' \
-        'api/backend/.mvn' \
-        'api/backend/games' \
-        'api/backend/docs/projects/games'
-    stage_git_selection "${backend_root}" 'cabezudo.dev' \
-        'AGENTS.md' \
-        'api/backend/AGENTS.md' \
-        'api/backend/pom.xml' \
-        'api/backend/mvnw' \
-        'api/backend/mvnw.cmd' \
-        'api/backend/.mvn' \
-        'api/backend/games' \
-        'api/backend/docs/projects/games'
-fi
+stage_git_selection "${backend_root}" 'games/backend' '.'
+stage_git_selection "${platform_root}" 'games/platform' \
+    'AGENTS.md' 'pom.xml' 'mvnw' 'mvnw.cmd' '.mvn' 'platform' \
+    'docs/projects/games'
 
 file_count=$(find -P "${staging_root}" -type f -printf . | wc -c)
 (( file_count > 0 )) || fail 'no source files selected'
