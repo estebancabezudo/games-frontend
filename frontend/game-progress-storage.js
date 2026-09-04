@@ -12,13 +12,30 @@ export function gameProgressStorageKey(gameId) {
 export function saveGameProgressSnapshot(storage, snapshot, gameModel) {
   const setItem = requireStorageMethod(storage, "setItem");
   restoreGameProgressSnapshot(snapshot, gameModel);
-  const key = gameProgressStorageKey(snapshot.gameId);
   let serialized;
   try {
     serialized = JSON.stringify(snapshot);
   } catch (cause) {
     throw new Error(`No se pudo serializar el progreso de ${snapshot.gameId}.`, { cause });
   }
+  if (typeof serialized !== "string") {
+    const cause = new TypeError("JSON.stringify no produjo texto JSON utilizable.");
+    throw new Error(`No se pudo serializar el progreso de ${snapshot.gameId}.`, { cause });
+  }
+
+  let serializedSnapshot;
+  try {
+    serializedSnapshot = JSON.parse(serialized);
+  } catch (cause) {
+    throw new Error(`No se pudo serializar el progreso de ${snapshot.gameId}.`, { cause });
+  }
+  try {
+    restoreGameProgressSnapshot(serializedSnapshot, gameModel);
+  } catch (cause) {
+    throw new Error(`El snapshot serializado de ${snapshot.gameId} es inválido.`, { cause });
+  }
+
+  const key = gameProgressStorageKey(serializedSnapshot.gameId);
   try {
     setItem.call(storage, key, serialized);
   } catch (cause) {

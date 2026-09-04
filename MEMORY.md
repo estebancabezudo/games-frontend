@@ -184,9 +184,10 @@ YAML → GameModel/SceneModel → estado y runtimes → coordinación → render
   límites de forma atómica. Las flags parten de una copia de `GameModel.initialState`,
   por lo que getters, dependencias y protección de las calculadas se reconstruyen.
 - `game-progress-storage.js` adapta ese contrato a un `Storage` inyectado. Usa una clave
-  versionada y aislada por juego, valida antes de guardar, restaura mediante el contrato
-  común y propaga fallos de lectura, JSON, validación, escritura o eliminación sin
-  sobrescribir ni borrar datos silenciosamente.
+  versionada y aislada por juego, valida tanto el objeto recibido como la representación
+  JSON exacta antes de guardar, restaura mediante el contrato común y propaga fallos de
+  lectura, JSON, validación, escritura o eliminación sin sobrescribir ni borrar datos
+  silenciosamente.
 - La persistencia local todavía no está conectada a la interfaz ni se ejecuta de forma
   automática. No existe persistencia en archivos o backend.
 
@@ -309,7 +310,7 @@ de entrada declarativos que tienen prioridad en cambios de escena explícitos.
 También existe un snapshot serializable y validado del progreso y un adaptador aislado
 para almacenarlo localmente, aún sin integración con la interfaz.
 
-- Última suite: 472 pruebas aprobadas.
+- Última suite: 474 pruebas aprobadas.
 - Último build: Vite, 130 módulos transformados.
 - Base aprobada de TAREA 60:
   `3c75547f2c030b764f21885a79544e6391dda8f3`.

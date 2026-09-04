@@ -256,6 +256,71 @@ test("failed save validation leaves an existing stored value unchanged", () => {
   assert.equal(storage.getItem(key), "previous");
 });
 
+test("save validates the exact serialized representation before replacing stored progress", () => {
+  const values = fixture();
+  const storage = memoryStorage();
+  const key = gameProgressStorageKey("example");
+  storage.setItem(key, "previous");
+  let writes = 0;
+  const originalSetItem = storage.setItem;
+  storage.setItem = function setItem(...parameters) {
+    writes += 1;
+    return originalSetItem.apply(this, parameters);
+  };
+  Object.defineProperty(values.snapshot, "toJSON", {
+    value() {
+      return { ...values.snapshot, inventory: ["missing"] };
+    },
+  });
+
+  assert.throws(
+    () => saveGameProgressSnapshot(storage, values.snapshot, values.gameModel),
+    (error) => (
+      /snapshot serializado.*inválido/.test(error.message)
+      && /snapshot\.inventory\[0\].*item inexistente/.test(error.cause?.message)
+    ),
+  );
+  assert.equal(writes, 0);
+  assert.equal(storage.getItem(key), "previous");
+});
+
+test("serialization failures and unusable output never call setItem", () => {
+  const values = fixture();
+  const storage = memoryStorage();
+  const key = gameProgressStorageKey("example");
+  storage.setItem(key, "previous");
+  let writes = 0;
+  const originalSetItem = storage.setItem;
+  storage.setItem = function setItem(...parameters) {
+    writes += 1;
+    return originalSetItem.apply(this, parameters);
+  };
+  const serializationFailure = new Error("cannot serialize");
+
+  Object.defineProperty(values.snapshot, "toJSON", {
+    configurable: true,
+    value() {
+      throw serializationFailure;
+    },
+  });
+  assert.throws(
+    () => saveGameProgressSnapshot(storage, values.snapshot, values.gameModel),
+    (error) => /No se pudo serializar/.test(error.message) && error.cause === serializationFailure,
+  );
+
+  Object.defineProperty(values.snapshot, "toJSON", {
+    value() {
+      return undefined;
+    },
+  });
+  assert.throws(
+    () => saveGameProgressSnapshot(storage, values.snapshot, values.gameModel),
+    (error) => /No se pudo serializar/.test(error.message) && error.cause instanceof TypeError,
+  );
+  assert.equal(writes, 0);
+  assert.equal(storage.getItem(key), "previous");
+});
+
 test("storage read, write, and removal failures propagate with context and cause", () => {
   const values = fixture();
   const failure = new Error("storage unavailable");
