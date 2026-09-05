@@ -1,3 +1,2 @@
-# Independent repositories inside the project directory
-/backend/
-/platform/
+dist/
+node_modules/
